@@ -1,9 +1,31 @@
 package azure
 
+// Copyright 2017 Microsoft Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strings"
+	log "github.com/sirupsen/logrus"
 )
+
+// EnvironmentFilepathName captures the name of the environment variable containing the path to the file
+// to be used while populating the Azure Environment.
+const EnvironmentFilepathName = "AZURE_ENVIRONMENT_FILEPATH"
 
 var environments = map[string]Environment{
 	"AZURECHINACLOUD":        ChinaCloud,
@@ -119,12 +141,45 @@ var (
 	}
 )
 
-// EnvironmentFromName returns an Environment based on the common name specified
+// EnvironmentFromName returns an Environment based on the common name specified.
 func EnvironmentFromName(name string) (Environment, error) {
+	// IMPORTANT
+	// As per @radhikagupta5:
+	// This is technical debt, fundamentally here because Kubernetes is not currently accepting
+	// contributions to the providers. Once that is an option, the provider should be updated to
+	// directly call `EnvironmentFromFile`. Until then, we rely on dispatching Azure Stack environment creation
+	// from this method based on the name that is provided to us.
+	log.Infoln(fmt.Sprintf("EnvironmentFromName: AzureEnvironment is: %s", name))
+	if strings.EqualFold(name, "AZURESTACKCLOUD") {
+		return EnvironmentFromFile(os.Getenv(EnvironmentFilepathName))
+	}
+
 	name = strings.ToUpper(name)
 	env, ok := environments[name]
 	if !ok {
 		return env, fmt.Errorf("autorest/azure: There is no cloud environment matching the name %q", name)
 	}
+
 	return env, nil
+}
+
+// EnvironmentFromFile loads an Environment from a configuration file available on disk.
+// This function is particularly useful in the Hybrid Cloud model, where one must define their own
+// endpoints.
+func EnvironmentFromFile(location string) (unmarshaled Environment, err error) {
+
+    log.Infoln(fmt.Sprintf("EnvironmentFromFile: Reading file from location: %s", location))
+	fileContents, err := ioutil.ReadFile(location)
+	if err != nil {
+	    log.Infoln(fmt.Errorf("EnvironmentFromFile: Error parsing the enviroment jason file: %q", err.Error()))
+		return
+	}
+
+	err = json.Unmarshal(fileContents, &unmarshaled)
+	
+	if err != nil {
+		log.Infoln(fmt.Errorf("EnvironmentFromFile: Error parsing the enviroment jason file: %q", err.Error()))
+	}
+
+	return
 }
