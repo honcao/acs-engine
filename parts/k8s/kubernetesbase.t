@@ -156,6 +156,34 @@
               "sourceAddressPrefix": "*",
               "sourcePortRange": "*"
             }
+          },
+		  {
+            "name": "allow_portany_inbound",
+            "properties": {
+              "access": "Allow",
+              "description": "Allow traffic to specific addresses.",
+              "destinationAddressPrefix": "10.0.0.0/8",
+              "destinationPortRange": "*",
+              "direction": "Inbound",
+              "priority": 4095,
+              "protocol": "*",
+              "sourceAddressPrefix": "10.0.0.0/8",
+              "sourcePortRange": "*"
+            }
+          },
+          {
+            "name": "allow_portany_outbound",
+            "properties": {
+              "access": "Allow",
+              "description": "Allow traffic to specific addresses.",
+              "destinationAddressPrefix": "10.0.0.0/8",
+              "destinationPortRange": "*",
+              "direction": "Outbound",
+              "priority": 4095,
+              "protocol": "*",
+              "sourceAddressPrefix": "10.0.0.0/8",
+              "sourcePortRange": "*"
+            }
           }
         ]
       },

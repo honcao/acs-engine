@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/Azure/acs-engine/pkg/api"
 	"github.com/Azure/acs-engine/pkg/api/common"
 	"github.com/Azure/acs-engine/pkg/helpers"
@@ -181,6 +182,29 @@ var (
 			api.CoreOS: DefaultCoreOSImageConfig,
 		},
 	}
+	
+	//AzureStackCloudSpec is the default configurations for global azure.
+	AzureStackCloudSpec = AzureEnvironmentSpecConfig{
+		//DockerSpecConfig specify the docker engine download repo
+		DockerSpecConfig: DefaultDockerSpecConfig,
+		//KubernetesSpecConfig is the default kubernetes container image url.
+		KubernetesSpecConfig: DefaultKubernetesSpecConfig,
+		DCOSSpecConfig:       DefaultDCOSSpecConfig,
+
+		EndpointConfig: AzureEndpointConfig{
+			ResourceManagerVMDNSSuffix: "cloudapp.azurestack.external",
+		},
+
+		OSImageConfig: map[api.Distro]AzureOSImageConfig{
+			api.Ubuntu: {
+				ImageOffer:     "UbuntuServer",
+				ImageSku:       "16.04-LTS",
+				ImagePublisher: "Canonical",
+				ImageVersion:   "16.04.201802220",
+			},
+			api.RHEL: DefaultRHELOSImageConfig,
+		},
+	}
 
 	// DefaultTillerAddonsConfig is the default tiller Kubernetes addon Config
 	DefaultTillerAddonsConfig = api.KubernetesAddon{
@@ -290,7 +314,7 @@ func setOrchestratorDefaults(cs *api.ContainerService) {
 	location := cs.Location
 	a := cs.Properties
 
-	cloudSpecConfig := GetCloudSpecConfig(location)
+	cloudSpecConfig := GetCloudSpecConfig(location, a)
 	if a.OrchestratorProfile == nil {
 		return
 	}
@@ -650,7 +674,7 @@ func setDefaultCerts(a *api.Properties) (bool, error) {
 		return false, nil
 	}
 
-	masterExtraFQDNs := FormatAzureProdFQDNs(a.MasterProfile.DNSPrefix)
+	masterExtraFQDNs := FormatAzureProdFQDNs(a.MasterProfile.DNSPrefix, a)
 	firstMasterIP := net.ParseIP(a.MasterProfile.FirstConsecutiveStaticIP).To4()
 
 	if firstMasterIP == nil {
@@ -900,4 +924,15 @@ func enforceK8sVersionAddonOverrides(addons []api.KubernetesAddon, o *api.Orches
 
 func k8sVersionMetricsServerAddonEnabled(o *api.OrchestratorProfile) *bool {
 	return helpers.PointerToBool(common.IsKubernetesVersionGe(o.OrchestratorVersion, "1.9.0"))
+}
+
+func getCloudProfileName(properties *api.Properties) string {
+	var cloudProfileName string = ""
+	if properties.CloudProfile != nil {
+		cloudProfileName = properties.CloudProfile.Name
+		if cloudProfileName == "" {
+			log.Fatalf("CloudProfile is present but no name associated with it.")
+		}
+	}
+	return cloudProfileName
 }

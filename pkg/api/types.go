@@ -2,7 +2,8 @@ package api
 
 import (
 	neturl "net/url"
-
+	
+	"strings"
 	"github.com/Azure/acs-engine/pkg/api/agentPoolOnlyApi/v20170831"
 	"github.com/Azure/acs-engine/pkg/api/agentPoolOnlyApi/v20180331"
 	"github.com/Azure/acs-engine/pkg/api/common"
@@ -58,6 +59,7 @@ type Properties struct {
 	AADProfile              *AADProfile              `json:"aadProfile,omitempty"`
 	CustomProfile           *CustomProfile           `json:"customProfile,omitempty"`
 	HostedMasterProfile     *HostedMasterProfile     `json:"hostedMasterProfile,omitempty"`
+	CloudProfile            *CloudProfile            `json:"cloudProfile,omitempty"`
 	AddonProfiles           map[string]AddonProfile  `json:"addonProfiles,omitempty"`
 }
 
@@ -356,6 +358,29 @@ type Extension struct {
 	Template    string `json:"template"`
 }
 
+// Cloud Profile Represents Azure Enviornment
+type CloudProfile struct {
+	Name                                 string `json:"name,omitempty"`
+	ManagementPortalURL                  string `json:"managementPortalURL,omitempty"`
+	PublishSettingsURL                   string `json:"publishSettingsURL,omitempty"`
+	ServiceManagementEndpoint            string `json:"serviceManagementEndpoint,omitempty"`
+	ResourceManagerEndpoint              string `json:"resourceManagerEndpoint,omitempty"`
+	ActiveDirectoryEndpoint              string `json:"activeDirectoryEndpoint,omitempty"`
+	GalleryEndpoint                      string `json:"galleryEndpoint,omitempty"`
+	KeyVaultEndpoint                     string `json:"keyVaultEndpoint,omitempty"`
+	GraphEndpoint                        string `json:"graphEndpoint,omitempty"`
+	StorageEndpointSuffix                string `json:"storageEndpointSuffix,omitempty"`
+	SQLDatabaseDNSSuffix                 string `json:"sqlDatabaseDNSSuffix,omitempty"`
+	TrafficManagerDNSSuffix              string `json:"trafficManagerDNSSuffix,omitempty"`
+	KeyVaultDNSSuffix                    string `json:"keyVaultDNSSuffix,omitempty"`
+	ServiceBusEndpointSuffix             string `json:"serviceBusEndpointSuffix,omitempty"`
+	ServiceManagementVMDNSSuffix         string `json:"serviceManagementVMDNSSuffix,omitempty"`
+	ResourceManagerVMDNSSuffix           string `json:"resourceManagerVMDNSSuffix,omitempty"`
+	ContainerRegistryDNSSuffix           string `json:"containerRegistryDNSSuffix,omitempty"`
+	ResourceManagerRootCertificate       string `json:"resourceManagerRootCertificate,omitempty"`
+	Location							 string `json:"location,omitempty"`
+}
+
 // AgentPoolProfile represents an agent pool definition
 type AgentPoolProfile struct {
 	Name                string `json:"name"`
@@ -541,6 +566,14 @@ func (p *Properties) HasWindows() bool {
 		}
 	}
 	return false
+}
+
+// IsAzureStackCloud returns true if it's hybrid cloud solution of AzureStack   
+func (c *CloudProfile) IsAzureStackCloud() bool {  
+	if strings.EqualFold(c.Name, "AzureStackCloud") { 
+		return true  
+	}  
+	return false  
 }
 
 // HasManagedDisks returns true if the cluster contains Managed Disks

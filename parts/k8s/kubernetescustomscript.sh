@@ -42,6 +42,19 @@ ensureRunCommandCompleted()
     fi
 }
 
+ensureCertificates()
+{
+    echo "Updating certificates"
+	sudo cp /etc/kubernetes/certs/apiserver.crt /usr/local/share/ca-certificates/
+
+	# Copying the AzureStack root certificate to the appropriate store to be updated.
+	sudo cp /var/lib/waagent/Certificates.pem /usr/local/share/ca-certificates/azsCertificate.crt
+	
+	update-ca-certificates
+}
+
+# cloudinit runcmd and the extension will run in parallel, this is to ensure
+# runcmd finishes
 ensureDockerInstallCompleted()
 {
     echo "waiting for docker install to finish"
@@ -463,17 +476,13 @@ users:
     set -x
 }
 
-if [[ "$CONTAINER_RUNTIME" == "clear-containers" ]]; then
-	# If the container runtime is "clear-containers" we need to ensure the
-	# run command is completed _before_ we start installing all the dependencies
-	# for clear-containers to make sure there is not a dpkg lock.
-	ensureRunCommandCompleted
-	echo `date`,`hostname`, RunCmdCompleted>>/opt/m
-fi
+ensureRunCommandCompleted
+echo `date`,`hostname`, RunCmdCompleted>>/opt/m
 
 if [[ $OS == $UBUNTU_OS_NAME ]]; then
 	# make sure walinuxagent doesn't get updated in the middle of running this script
 	retrycmd_if_failure 20 5 5 apt-mark hold walinuxagent
+	ensureCertificates
 fi
 
 echo `date`,`hostname`, EnsureDockerStart>>/opt/m

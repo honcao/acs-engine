@@ -72,6 +72,9 @@ spec:
         configMap:
           name: kube-dns
           optional: true
+      - hostPath:
+          path: "/etc/ssl/certs"
+        name: ssl-certs-host
       containers:
       - args:
         - "--domain=<kubernetesKubeletClusterDomain>."
@@ -112,6 +115,9 @@ spec:
         volumeMounts:
         - name: kube-dns-config
           mountPath: /kube-dns-config
+        - mountPath: "/etc/ssl/certs"
+          name: ssl-certs-host
+          readOnly: true
       - args:
         - "-v=2"
         - "-logtostderr"
@@ -137,6 +143,9 @@ spec:
         volumeMounts:
         - mountPath: /kube-dns-config
           name: kube-dns-config
+        - mountPath: "/etc/ssl/certs"
+          name: ssl-certs-host
+          readOnly: true
       - args:
         - "--cmd=nslookup kubernetes.default.svc.<kubernetesKubeletClusterDomain> 127.0.0.1 >/dev/null"
         - "--url=/healthz-dnsmasq"
@@ -164,6 +173,10 @@ spec:
           requests:
             cpu: 10m
             memory: 50Mi
+        volumeMounts:
+        - mountPath: "/etc/ssl/certs"
+          name: ssl-certs-host
+          readOnly: true
       dnsPolicy: Default
       serviceAccountName: kube-dns
       nodeSelector:
