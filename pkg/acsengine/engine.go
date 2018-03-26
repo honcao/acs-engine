@@ -397,15 +397,13 @@ func FormatAzureProdFQDN(fqdnPrefix string, location string, properties *api.Pro
 	case azureUSGovernmentCloud:
 		FQDNFormat = AzureUSGovernmentCloud.EndpointConfig.ResourceManagerVMDNSSuffix
 	case azureStackCloud:
-		var cloudprofileResourceManagerVMDNSSuffix = properties.CloudProfile.ResourceManagerVMDNSSuffix
-		if cloudprofileResourceManagerVMDNSSuffix != "" {
-			// Assigning the value specified in cloud profile.
-			FQDNFormat = cloudprofileResourceManagerVMDNSSuffix
-		} else {
-			// Assigning from default values.
-			FQDNFormat = AzureStackCloudSpec.EndpointConfig.ResourceManagerVMDNSSuffix
-		}
-	default:
+        var cloudprofileResourceManagerVMDNSSuffix = properties.CloudProfile.ResourceManagerVMDNSSuffix
+        if cloudprofileResourceManagerVMDNSSuffix == "" {
+                        log.Fatalf("CloudProfile type %s has empty resourceManagerVMDNSSuffix specified '%s'", cloudProfileName, cloudprofileResourceManagerVMDNSSuffix)
+        } else {
+                FQDNFormat = cloudprofileResourceManagerVMDNSSuffix
+        }
+    default:
 		FQDNFormat = AzureCloudSpec.EndpointConfig.ResourceManagerVMDNSSuffix
 	}
 
@@ -491,7 +489,20 @@ func getParameters(cs *api.ContainerService, isClassicMode bool, generatorCode s
 	addValue(parametersMap, "osImagePublisher", cloudSpecConfig.OSImageConfig[masterDistro].ImagePublisher)
 	addValue(parametersMap, "osImageVersion", cloudSpecConfig.OSImageConfig[masterDistro].ImageVersion)
 
-	addValue(parametersMap, "fqdnEndpointSuffix", cloudSpecConfig.EndpointConfig.ResourceManagerVMDNSSuffix)
+	if properties.CloudProfile != nil {
+		var cloudProfileName string = getCloudProfileName(properties)
+		if strings.EqualFold(cloudProfileName, azureStackCloud) {
+			var cloudprofileResourceManagerVMDNSSuffix = properties.CloudProfile.ResourceManagerVMDNSSuffix
+			if cloudprofileResourceManagerVMDNSSuffix == "" {
+				log.Fatalf("CloudProfile type %s has empty resourceManagerVMDNSSuffix specified '%s'", cloudProfileName, cloudprofileResourceManagerVMDNSSuffix)
+			} else {
+				addValue(parametersMap, "fqdnEndpointSuffix", cloudprofileResourceManagerVMDNSSuffix)
+			}
+		}
+	} else {
+		addValue(parametersMap, "fqdnEndpointSuffix", cloudSpecConfig.EndpointConfig.ResourceManagerVMDNSSuffix)
+	}
+
 	addValue(parametersMap, "targetEnvironment", GetCloudTargetEnv(location, getCloudProfileName(properties)))
 	addValue(parametersMap, "linuxAdminUsername", properties.LinuxProfile.AdminUsername)
 	// masterEndpointDNSNamePrefix is the basis for storage account creation across dcos, swarm, and k8s
