@@ -91,21 +91,12 @@ func (b *Blob) CreateBlockBlobFromReader(blob io.Reader, options *PutBlobOptions
 	var n int64
 	var err error
 	if blob != nil {
-		type lener interface {
-			Len() int
+		buf := &bytes.Buffer{}
+		n, err = io.Copy(buf, blob)
+		if err != nil {
+			return err
 		}
-		// TODO(rjeczalik): handle io.ReadSeeker, in case blob is *os.File etc.
-		if l, ok := blob.(lener); ok {
-			n = int64(l.Len())
-		} else {
-			var buf bytes.Buffer
-			n, err = io.Copy(&buf, blob)
-			if err != nil {
-				return err
-			}
-			blob = &buf
-		}
-
+		blob = buf
 		headers["Content-Length"] = strconv.FormatInt(n, 10)
 	}
 	b.Properties.ContentLength = n
