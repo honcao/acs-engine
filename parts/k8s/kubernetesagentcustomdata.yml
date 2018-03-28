@@ -38,7 +38,14 @@ write_files:
       "serviceManagementVMDNSSuffix": "{{WrapAsVariable "cloudprofileServiceManagementVMDNSSuffix"}}",
       "resourceManagerVMDNSSuffix": "{{WrapAsVariable "cloudprofileResourceManagerVMDNSSuffix"}}",
       "containerRegistryDNSSuffix": "{{WrapAsVariable "cloudprofileContainerRegistryDNSSuffix"}}",
-      "location": "{{WrapAsVariable "cloudprofileLocation"}}"
+      "location": "{{WrapAsVariable "cloudprofileLocation"}}",
+      "armComputeAPIVersion": "2016-03-30",
+      "armNetworkAPIVersion": "2015-06-15",
+      "armNetworkScaleSetAPIVersion": "2015-06-15",
+      "armStorageAPIVersion": "2016-01-01",
+      "armDiskAPIVersion": "2016-04-30-preview",
+      "storageAPIVersion": "2016-05-31",
+      "armContainerRegistryAPIVersion": "2017-03-01"
     }
 - path: "/etc/systemd/system/docker.service.d/exec_start.conf"
   permissions: "0644"
