@@ -2,9 +2,11 @@ package acsengine
 
 import (
 	"fmt"
+	"log"
 	"path"
 	"strconv"
-
+	"strings"
+	
 	"github.com/Azure/acs-engine/pkg/api"
 	"github.com/Azure/acs-engine/pkg/i18n"
 )
@@ -60,6 +62,15 @@ func (w *ArtifactWriter) WriteTLSArtifacts(containerService *api.ContainerServic
 				locations = []string{containerService.Location}
 			} else {
 				locations = AzureLocations
+
+				// We need an additional customer provided location for hybrid cloud solution (AzureStack).
+				var cloudProfileName string = getCloudProfileName(properties)
+				if cloudProfileName != "" && strings.EqualFold(cloudProfileName, azureStackCloud) {
+					if properties.CloudProfile.Location == "" {
+						log.Fatalf("CloudProfile type %s has empty location specified '%s'", cloudProfileName, properties.CloudProfile.Location)
+					}
+					locations = append(locations, properties.CloudProfile.Location)
+				}
 			}
 
 			for _, location := range locations {
