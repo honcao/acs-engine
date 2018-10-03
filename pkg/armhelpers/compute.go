@@ -3,6 +3,7 @@ package armhelpers
 import (
 	"context"
 
+	acscompute "github.com/Azure/acs-engine/pkg/armhelpers/types/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 )
 
@@ -13,8 +14,9 @@ func (az *AzureClient) ListVirtualMachines(ctx context.Context, resourceGroup st
 }
 
 // GetVirtualMachine returns the specified machine in the specified resource group.
-func (az *AzureClient) GetVirtualMachine(ctx context.Context, resourceGroup, name string) (compute.VirtualMachine, error) {
-	return az.virtualMachinesClient.Get(ctx, resourceGroup, name, "")
+func (az *AzureClient) GetVirtualMachine(ctx context.Context, resourceGroup, name string) (acscompute.VirtualMachine, error) {
+	vm, err := az.virtualMachinesClient.Get(ctx, resourceGroup, name, "")
+	return acscompute.VirtualMachine(vm), err
 }
 
 // DeleteVirtualMachine handles deletion of a CRP/VMAS VM (aka, not a VMSS VM).
