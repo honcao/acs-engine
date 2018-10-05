@@ -919,3 +919,80 @@ func ConvertNetworkProfile(azs *azscompute.NetworkProfile) *compute.NetworkProfi
 	np.NetworkInterfaces = &snpn
 	return &np
 }
+
+// ConvertDiskList converts compute.DiskList from version 2017-03-30 to 2018-04-01
+func ConvertDiskList(azs azscompute.DiskList) compute.DiskList {
+
+	return compute.DiskList{
+		Response: azs.Response,
+		Value:    ConvertDiskSlice(azs.Value),
+		NextLink: azs.NextLink,
+	}
+
+}
+
+// ConvertCreationData converts *compute.CreationData from version 2017-03-30 to 2018-04-01
+func ConvertCreationData(azs *azscompute.CreationData) *compute.CreationData {
+
+	if azs == nil {
+		return nil
+	}
+	return &compute.CreationData{}
+}
+
+// ConvertEncryptionSettings converts *compute.EncryptionSettings from version 2017-03-30 to 2018-04-01
+func ConvertEncryptionSettings(azs *azscompute.EncryptionSettings) *compute.EncryptionSettings {
+
+	if azs == nil {
+		return nil
+	}
+	//TODO
+	return &compute.EncryptionSettings{}
+}
+
+// ConvertDisk converts *compute.Disk from version 2017-03-30 to 2018-04-01
+func ConvertDisk(azs *azscompute.Disk) *compute.Disk {
+
+	if azs == nil {
+		return nil
+	}
+	d := compute.Disk{
+		Response:  azs.Response,
+		ManagedBy: azs.ManagedBy,
+		Zones:     azs.Zones,
+		ID:        azs.ID,
+		Name:      azs.Name,
+		Location:  azs.Location,
+		Tags:      azs.Tags,
+	}
+
+	if azs.Sku != nil {
+		d.Sku = &compute.DiskSku{
+			Name: compute.StorageAccountTypes(string(azs.Sku.Name)),
+			Tier: azs.Sku.Tier,
+		}
+	}
+	d.TimeCreated = azs.TimeCreated
+	d.OsType = compute.OperatingSystemTypes(string(azs.OsType))
+
+	d.CreationData = ConvertCreationData(azs.CreationData)
+	d.DiskSizeGB = azs.DiskSizeGB
+	d.EncryptionSettings = ConvertEncryptionSettings(azs.EncryptionSettings)
+	d.ProvisioningState = azs.ProvisioningState
+
+	return &d
+}
+
+// ConvertDiskSlice converts *[]compute.NetworkProfile from version 2017-03-30 to 2018-04-01
+func ConvertDiskSlice(azs *[]azscompute.Disk) *[]compute.Disk {
+
+	if azs == nil {
+		return nil
+	}
+	snpn := []compute.Disk{}
+	for _, vsnpn := range *azs {
+
+		snpn = append(snpn, *ConvertDisk(&vsnpn))
+	}
+	return &snpn
+}

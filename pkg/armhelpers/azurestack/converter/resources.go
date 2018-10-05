@@ -6,8 +6,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 )
 
-// ConvertDeploymentExtended20180201To20180501 converts resources.DeploymentExtended from version 2018-05-01 to 2018-02-01
-func ConvertDeploymentExtended20180201To20180501(azsde azsresources.DeploymentExtended) resources.DeploymentExtended {
+// ConvertDeploymentExtended converts resources.DeploymentExtended from version 2018-05-01 to 2018-02-01
+func ConvertDeploymentExtended(azsde azsresources.DeploymentExtended) resources.DeploymentExtended {
 
 	de := resources.DeploymentExtended{}
 	de.Response = azsde.Response
@@ -119,8 +119,8 @@ func ConvertDeploymentExtended20180201To20180501(azsde azsresources.DeploymentEx
 	return de
 }
 
-// ConvertGroup20180201To20180501 converts resources.DeploymentExtended from version 2018-05-01 to 2018-02-01
-func ConvertGroup20180201To20180501(azsg azsresources.Group) resources.Group {
+// ConvertGroup converts resources.DeploymentExtended from version 2018-05-01 to 2018-02-01
+func ConvertGroup(azsg azsresources.Group) resources.Group {
 	g := resources.Group{
 		Response:  azsg.Response,
 		ID:        azsg.ID,
@@ -133,6 +133,34 @@ func ConvertGroup20180201To20180501(azsg azsresources.Group) resources.Group {
 		g.Properties = &resources.GroupProperties{
 			ProvisioningState: azsg.Properties.ProvisioningState,
 		}
+	}
+
+	return g
+}
+
+// ConvertProvider converts resources.ProviderListResult from version 2018-05-01 to 2018-02-01
+func ConvertProvider(azs *azsresources.Provider) *resources.Provider {
+	p := resources.Provider{}
+	// TODO
+	return &p
+}
+
+// ConvertProviderSlice converts *[]resources.ProviderListResult from version 2018-05-01 to 2018-02-01
+func ConvertProviderSlice(azs *[]azsresources.Provider) *[]resources.Provider {
+	sp := []resources.Provider{}
+	for _, vsp := range *azs {
+		sp = append(sp, *ConvertProvider(&vsp))
+	}
+
+	return &sp
+}
+
+// ConvertProviderListResult converts resources.ProviderListResult from version 2018-05-01 to 2018-02-01
+func ConvertProviderListResult(azs azsresources.ProviderListResult) resources.ProviderListResult {
+	g := resources.ProviderListResult{
+		Response: azs.Response,
+		Value:    ConvertProviderSlice(azs.Value),
+		NextLink: azs.NextLink,
 	}
 
 	return g
