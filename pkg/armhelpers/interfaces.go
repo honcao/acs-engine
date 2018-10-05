@@ -39,6 +39,30 @@ type RoleAssignmentListResultPage interface {
 	Values() []authorization.RoleAssignment
 }
 
+//VirtualMachineScaleSetListResultPage is an interface for compute.VirtualMachineScaleSetListResultPage
+type VirtualMachineScaleSetListResultPage interface {
+	Next() error
+	NotDone() bool
+	Response() compute.VirtualMachineScaleSetListResult
+	Values() []compute.VirtualMachineScaleSet
+}
+
+//VirtualMachineScaleSetVMListResultPage is an interface for compute.VirtualMachineScaleSetVMListResultPage
+type VirtualMachineScaleSetVMListResultPage interface {
+	Next() error
+	NotDone() bool
+	Response() compute.VirtualMachineScaleSetVMListResult
+	Values() []compute.VirtualMachineScaleSetVM
+}
+
+//DiskListPage is an interface for compute.DiskListPage
+type DiskListPage interface {
+	Next() error
+	NotDone() bool
+	Response() compute.DiskList
+	Values() []compute.Disk
+}
+
 // ACSEngineClient is the interface used to talk to an Azure environment.
 // This interface exposes just the subset of Azure APIs and clients needed for
 // ACS-Engine.
@@ -71,10 +95,10 @@ type ACSEngineClient interface {
 	DeleteVirtualMachine(ctx context.Context, resourceGroup, name string) error
 
 	// ListVirtualMachineScaleSets lists the vmss resources in the resource group
-	ListVirtualMachineScaleSets(ctx context.Context, resourceGroup string) (compute.VirtualMachineScaleSetListResultPage, error)
+	ListVirtualMachineScaleSets(ctx context.Context, resourceGroup string) (VirtualMachineScaleSetListResultPage, error)
 
 	// ListVirtualMachineScaleSetVMs lists the virtual machines contained in a vmss
-	ListVirtualMachineScaleSetVMs(ctx context.Context, resourceGroup, virtualMachineScaleSet string) (compute.VirtualMachineScaleSetVMListResultPage, error)
+	ListVirtualMachineScaleSetVMs(ctx context.Context, resourceGroup, virtualMachineScaleSet string) (VirtualMachineScaleSetVMListResultPage, error)
 
 	// DeleteVirtualMachineScaleSetVM deletes a VM in a VMSS
 	DeleteVirtualMachineScaleSetVM(ctx context.Context, resourceGroup, virtualMachineScaleSet, instanceID string) error
@@ -118,7 +142,7 @@ type ACSEngineClient interface {
 
 	// MANAGED DISKS
 	DeleteManagedDisk(ctx context.Context, resourceGroupName string, diskName string) error
-	ListManagedDisksByResourceGroup(ctx context.Context, resourceGroupName string) (result compute.DiskListPage, err error)
+	ListManagedDisksByResourceGroup(ctx context.Context, resourceGroupName string) (result DiskListPage, err error)
 
 	GetKubernetesClient(masterURL, kubeConfig string, interval, timeout time.Duration) (KubernetesClient, error)
 

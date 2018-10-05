@@ -6,8 +6,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 )
 
-// ConvertVirtualMachine20170330To20180401 converts compute.VirtualMachine from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachine20170330To20180401(azsvm azscompute.VirtualMachine) compute.VirtualMachine {
+// ConvertVirtualMachine converts compute.VirtualMachine from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachine(azsvm azscompute.VirtualMachine) compute.VirtualMachine {
 	vm := compute.VirtualMachine{
 		Response: azsvm.Response,
 		Zones:    azsvm.Zones,
@@ -18,51 +18,10 @@ func ConvertVirtualMachine20170330To20180401(azsvm azscompute.VirtualMachine) co
 		Tags:     azsvm.Tags,
 	}
 
-	vm.Plan = ConvertPlan20170330To20180401(azsvm.Plan)
+	vm.Plan = ConvertPlan(azsvm.Plan)
 
 	if azsvm.VirtualMachineProperties != nil {
-		hw := compute.HardwareProfile{}
-		if azsvm.HardwareProfile != nil {
-			hw.VMSize = compute.VirtualMachineSizeTypes(string(azsvm.HardwareProfile.VMSize))
-		}
 
-		sp := compute.StorageProfile{}
-		if azsvm.StorageProfile != nil {
-			sp.ImageReference = ConvertImageReference20170330To20180401(azsvm.StorageProfile.ImageReference)
-			if azsvm.StorageProfile.OsDisk != nil {
-				od := compute.OSDisk{
-					OsType:                  compute.OperatingSystemTypes(string(azsvm.StorageProfile.OsDisk.OsType)),
-					Name:                    azsvm.StorageProfile.OsDisk.Name,
-					Caching:                 compute.CachingTypes(string(azsvm.StorageProfile.OsDisk.Caching)),
-					WriteAcceleratorEnabled: to.BoolPtr(false),
-					CreateOption:            compute.DiskCreateOptionTypes(string(azsvm.StorageProfile.OsDisk.CreateOption)),
-					DiskSizeGB:              azsvm.StorageProfile.OsDisk.DiskSizeGB,
-				}
-				if azsvm.StorageProfile.OsDisk.EncryptionSettings != nil {
-					odes := compute.DiskEncryptionSettings{}
-					od.EncryptionSettings = &odes
-				}
-				if azsvm.StorageProfile.OsDisk.Vhd != nil {
-					odvhd := compute.VirtualHardDisk{
-						URI: azsvm.StorageProfile.OsDisk.Vhd.URI,
-					}
-					od.Vhd = &odvhd
-				}
-				if azsvm.StorageProfile.OsDisk.Image != nil {
-					odi := compute.VirtualHardDisk{
-						URI: azsvm.StorageProfile.OsDisk.Image.URI,
-					}
-					od.Image = &odi
-				}
-				if azsvm.StorageProfile.OsDisk.ManagedDisk != nil {
-					odm := compute.ManagedDiskParameters{
-						ID:                 azsvm.StorageProfile.OsDisk.ManagedDisk.ID,
-						StorageAccountType: compute.StorageAccountTypes(string(azsvm.StorageProfile.OsDisk.ManagedDisk.StorageAccountType)),
-					}
-					od.ManagedDisk = &odm
-				}
-			}
-		}
 		op := compute.OSProfile{
 			ComputerName:  azsvm.OsProfile.ComputerName,
 			AdminUsername: azsvm.OsProfile.AdminUsername,
@@ -70,167 +29,35 @@ func ConvertVirtualMachine20170330To20180401(azsvm azscompute.VirtualMachine) co
 			CustomData:    azsvm.OsProfile.CustomData,
 		}
 
-		op.WindowsConfiguration = ConvertWindowsConfiguration20170330To20180401(azsvm.OsProfile.WindowsConfiguration)
-		op.LinuxConfiguration = ConvertLinuxConfiguration20170330To20180401(azsvm.OsProfile.LinuxConfiguration)
-		op.Secrets = ConvertVaultSecretGroup20170330To20180401(azsvm.OsProfile.Secrets)
-
-		np := compute.NetworkProfile{}
-		if azsvm.NetworkProfile != nil {
-			snpn := []compute.NetworkInterfaceReference{}
-			for _, vsnpn := range *azsvm.NetworkProfile.NetworkInterfaces {
-				npn := compute.NetworkInterfaceReference{
-					ID: vsnpn.ID,
-				}
-
-				if vsnpn.NetworkInterfaceReferenceProperties != nil {
-					npn.NetworkInterfaceReferenceProperties = &compute.NetworkInterfaceReferenceProperties{
-						Primary: vsnpn.NetworkInterfaceReferenceProperties.Primary,
-					}
-				}
-
-				snpn = append(snpn, npn)
-			}
-			np.NetworkInterfaces = &snpn
-		}
-
-		as := compute.SubResource{}
-		if azsvm.AvailabilitySet != nil {
-			as.ID = azsvm.AvailabilitySet.ID
-		}
+		op.WindowsConfiguration = ConvertWindowsConfiguration(azsvm.OsProfile.WindowsConfiguration)
+		op.LinuxConfiguration = ConvertLinuxConfiguration(azsvm.OsProfile.LinuxConfiguration)
+		op.Secrets = ConvertVaultSecretGroup(azsvm.OsProfile.Secrets)
 
 		iw := compute.VirtualMachineInstanceView{}
 		if azsvm.InstanceView != nil {
 			iw.Response = azsvm.InstanceView.Response
-
 			iw.PlatformUpdateDomain = azsvm.InstanceView.PlatformUpdateDomain
 			iw.PlatformFaultDomain = azsvm.InstanceView.PlatformFaultDomain
 			iw.ComputerName = nil //Empty in azsvm.InstanceView.ComputerName
 			iw.OsName = nil       //Empty in azsvm.InstanceView.OsName
 			iw.OsVersion = nil    //Empty in azsvm.InstanceView.OsVersion
 			iw.RdpThumbPrint = azsvm.InstanceView.RdpThumbPrint
+			iw.VMAgent = ConvertVirtualMachineAgentInstanceView(azsvm.InstanceView.VMAgent)
+			iw.MaintenanceRedeployStatus = ConvertMaintenanceRedeployStatus(azsvm.InstanceView.MaintenanceRedeployStatus)
+			iw.Disks = ConvertDiskInstanceViewSlice(azsvm.InstanceView.Disks)
+			iw.Extensions = ConvertVirtualMachineExtensionInstanceViewSlice(azsvm.InstanceView.Extensions)
+			iw.BootDiagnostics = ConvertBootDiagnosticsInstanceView(azsvm.InstanceView.BootDiagnostics)
+			iw.Statuses = ConvertInstanceViewStatusSlice(azsvm.InstanceView.Statuses)
 
-			if azsvm.InstanceView.VMAgent != nil {
-				va := compute.VirtualMachineAgentInstanceView{
-					VMAgentVersion: azsvm.InstanceView.VMAgent.VMAgentVersion,
-				}
-
-				if azsvm.InstanceView.VMAgent.ExtensionHandlers != nil {
-					sehi := []compute.VirtualMachineExtensionHandlerInstanceView{}
-					for _, vehi := range *azsvm.InstanceView.VMAgent.ExtensionHandlers {
-						ehi := compute.VirtualMachineExtensionHandlerInstanceView{
-							Type:               vehi.Type,
-							TypeHandlerVersion: vehi.TypeHandlerVersion,
-						}
-
-						if vehi.Status != nil {
-							ehi.Status = &compute.InstanceViewStatus{
-								Code:          vehi.Status.Code,
-								Level:         compute.StatusLevelTypes(string(vehi.Status.Level)),
-								DisplayStatus: vehi.Status.DisplayStatus,
-								Message:       vehi.Status.Message,
-								Time:          vehi.Status.Time,
-							}
-						}
-
-						sehi = append(sehi, ehi)
-					}
-					iw.VMAgent.ExtensionHandlers = &sehi
-				}
-
-				if azsvm.InstanceView.VMAgent.Statuses != nil {
-					svms := []compute.InstanceViewStatus{}
-					for _, vsvms := range *azsvm.InstanceView.VMAgent.Statuses {
-						vms := compute.InstanceViewStatus{
-							Code:          vsvms.Code,
-							Level:         compute.StatusLevelTypes(string(vsvms.Level)),
-							DisplayStatus: vsvms.DisplayStatus,
-							Message:       vsvms.Message,
-							Time:          vsvms.Time,
-						}
-						svms = append(svms, vms)
-					}
-					iw.VMAgent.Statuses = &svms
-				}
-
-				iw.VMAgent = &va
-
-			}
-
-			if azsvm.InstanceView.MaintenanceRedeployStatus != nil {
-				mrs := compute.MaintenanceRedeployStatus{
-					IsCustomerInitiatedMaintenanceAllowed: azsvm.InstanceView.MaintenanceRedeployStatus.IsCustomerInitiatedMaintenanceAllowed,
-					PreMaintenanceWindowStartTime:         azsvm.InstanceView.MaintenanceRedeployStatus.PreMaintenanceWindowStartTime,
-					PreMaintenanceWindowEndTime:           azsvm.InstanceView.MaintenanceRedeployStatus.PreMaintenanceWindowEndTime,
-					MaintenanceWindowStartTime:            azsvm.InstanceView.MaintenanceRedeployStatus.MaintenanceWindowStartTime,
-					MaintenanceWindowEndTime:              azsvm.InstanceView.MaintenanceRedeployStatus.MaintenanceWindowEndTime,
-					LastOperationResultCode:               compute.MaintenanceOperationResultCodeTypes(string(azsvm.InstanceView.MaintenanceRedeployStatus.LastOperationResultCode)),
-					LastOperationMessage:                  azsvm.InstanceView.MaintenanceRedeployStatus.LastOperationMessage,
-				}
-				iw.MaintenanceRedeployStatus = &mrs
-			}
-
-			if azsvm.InstanceView.Disks != nil {
-				svmid := []compute.DiskInstanceView{}
-				for _, vsvmid := range *azsvm.InstanceView.Disks {
-					vmid := compute.DiskInstanceView{
-						Name: vsvmid.Name,
-					}
-					if vsvmid.EncryptionSettings != nil {
-						ses := []compute.DiskEncryptionSettings{}
-						for _, vses := range *vsvmid.EncryptionSettings {
-							es := compute.DiskEncryptionSettings{
-								Enabled: vses.Enabled,
-							}
-							if vses.DiskEncryptionKey != nil {
-								es.DiskEncryptionKey = &compute.KeyVaultSecretReference{
-									SecretURL: vses.DiskEncryptionKey.SecretURL,
-								}
-								if vses.DiskEncryptionKey.SourceVault != nil {
-									es.DiskEncryptionKey.SourceVault = &compute.SubResource{
-										ID: vses.DiskEncryptionKey.SourceVault.ID,
-									}
-								}
-							}
-							ses = append(ses, es)
-						}
-						vmid.EncryptionSettings = &ses
-					}
-
-					svmid = append(svmid, vmid)
-				}
-				iw.Disks = &svmid
-			}
-			iw.Extensions = ConvertVirtualMachineExtensionInstanceViewSlice20170330To20180401(azsvm.InstanceView.Extensions)
-
-			if azsvm.InstanceView.BootDiagnostics != nil {
-				iw.BootDiagnostics = &compute.BootDiagnosticsInstanceView{
-					ConsoleScreenshotBlobURI: azsvm.InstanceView.BootDiagnostics.ConsoleScreenshotBlobURI,
-					SerialConsoleLogBlobURI:  azsvm.InstanceView.BootDiagnostics.SerialConsoleLogBlobURI,
-				}
-			}
-			if azsvm.InstanceView.Statuses != nil {
-				svmss1 := []compute.InstanceViewStatus{}
-				for _, vsvmss1 := range *azsvm.InstanceView.Statuses {
-					vmss1 := compute.InstanceViewStatus{
-						Code:          vsvmss1.Code,
-						Level:         compute.StatusLevelTypes(string(vsvmss1.Level)),
-						DisplayStatus: vsvmss1.DisplayStatus,
-						Message:       vsvmss1.Message,
-						Time:          vsvmss1.Time,
-					}
-					svmss1 = append(svmss1, vmss1)
-				}
-				iw.Statuses = &svmss1
-			}
 		}
 
 		vm.VirtualMachineProperties = &compute.VirtualMachineProperties{
-			HardwareProfile:    &hw,
-			StorageProfile:     &sp,
+			HardwareProfile:    ConvertHardwareProfile(azsvm.HardwareProfile),
+			StorageProfile:     ConvertStorageProfile(azsvm.StorageProfile),
 			OsProfile:          &op,
-			NetworkProfile:     &np,
-			DiagnosticsProfile: ConvertDiagnosticsProfile20170330To20180401(azsvm.DiagnosticsProfile),
-			AvailabilitySet:    &as,
+			NetworkProfile:     ConvertNetworkProfile(azsvm.NetworkProfile),
+			DiagnosticsProfile: ConvertDiagnosticsProfile(azsvm.DiagnosticsProfile),
+			AvailabilitySet:    ConvertSubResource(azsvm.AvailabilitySet),
 			ProvisioningState:  azsvm.ProvisioningState,
 			InstanceView:       &iw,
 			LicenseType:        azsvm.LicenseType,
@@ -256,7 +83,7 @@ func ConvertVirtualMachine20170330To20180401(azsvm azscompute.VirtualMachine) co
 			vmr.AutoUpgradeMinorVersion = vsvmr.AutoUpgradeMinorVersion
 			vmr.Settings = vsvmr.Settings
 			vmr.ProvisioningState = vsvmr.ProvisioningState
-			vmr.InstanceView = ConvertVirtualMachineExtensionInstanceView20170330To20180401(vsvmr.InstanceView)
+			vmr.InstanceView = ConvertVirtualMachineExtensionInstanceView(vsvmr.InstanceView)
 			svmr = append(svmr, vmr)
 		}
 		vm.Resources = &svmr
@@ -275,26 +102,26 @@ func ConvertVirtualMachine20170330To20180401(azsvm azscompute.VirtualMachine) co
 	return vm
 }
 
-// ConvertVirtualMachineScaleSetSlice20170330To20180401 converts *[]compute.VirtualMachine from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetSlice20170330To20180401(azsvmss *[]azscompute.VirtualMachineScaleSet) *[]compute.VirtualMachineScaleSet {
+// ConvertVirtualMachineScaleSetSlice converts *[]compute.VirtualMachine from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetSlice(azsvmss *[]azscompute.VirtualMachineScaleSet) *[]compute.VirtualMachineScaleSet {
 	if azsvmss == nil {
 		return nil
 	}
 
 	svmss := []compute.VirtualMachineScaleSet{}
 	for _, vvmss := range *azsvmss {
-		svmss = append(svmss, ConvertVirtualMachineScaleSet20170330To20180401(vvmss))
+		svmss = append(svmss, ConvertVirtualMachineScaleSet(vvmss))
 	}
 	return &svmss
 }
 
-// ConvertVirtualMachineScaleSet20170330To20180401 converts compute.VirtualMachine from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSet20170330To20180401(azsvmss azscompute.VirtualMachineScaleSet) compute.VirtualMachineScaleSet {
+// ConvertVirtualMachineScaleSet converts compute.VirtualMachine from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSet(azsvmss azscompute.VirtualMachineScaleSet) compute.VirtualMachineScaleSet {
 	vmss := compute.VirtualMachineScaleSet{
 		Response: azsvmss.Response,
-		Sku:      ConvertSku20170330To20180401(azsvmss.Sku),
-		Plan:     ConvertPlan20170330To20180401(azsvmss.Plan),
-		Identity: ConvertVirtualMachineScaleSetIdentity20170330To20180401(azsvmss.Identity),
+		Sku:      ConvertFromSku(azsvmss.Sku),
+		Plan:     ConvertPlan(azsvmss.Plan),
+		Identity: ConvertVirtualMachineScaleSetIdentity(azsvmss.Identity),
 		Zones:    azsvmss.Zones,
 		ID:       azsvmss.ID,
 		Name:     azsvmss.Name,
@@ -303,19 +130,19 @@ func ConvertVirtualMachineScaleSet20170330To20180401(azsvmss azscompute.VirtualM
 		Tags:     azsvmss.Tags,
 	}
 
-	vmss.UpgradePolicy = ConvertUpgradePolicy20170330To20180401(azsvmss.UpgradePolicy)
+	vmss.UpgradePolicy = ConvertUpgradePolicy(azsvmss.UpgradePolicy)
 	vmss.ProvisioningState = azsvmss.ProvisioningState
 	vmss.Overprovision = azsvmss.Overprovision
 	vmss.UniqueID = azsvmss.UniqueID
 	vmss.SinglePlacementGroup = azsvmss.SinglePlacementGroup
 	vmss.ZoneBalance = nil              // empty in azsvmss.ZoneBalance
 	vmss.PlatformFaultDomainCount = nil // empty in  azsvmss.PlatformFaultDomainCount
-	vmss.VirtualMachineProfile = ConvertVirtualMachineScaleSetVMProfile20170330To20180401(azsvmss.VirtualMachineProfile)
+	vmss.VirtualMachineProfile = ConvertVirtualMachineScaleSetVMProfile(azsvmss.VirtualMachineProfile)
 	return vmss
 }
 
-//ConvertVirtualMachineListResult20170330To20180401 converts *[]compute.VirtualMachineListResult from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineListResult20170330To20180401(azsvmlr azscompute.VirtualMachineListResult) compute.VirtualMachineListResult {
+//ConvertVirtualMachineListResult converts *[]compute.VirtualMachineListResult from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineListResult(azsvmlr azscompute.VirtualMachineListResult) compute.VirtualMachineListResult {
 	vmlr := compute.VirtualMachineListResult{
 		Response: azsvmlr.Response,
 		NextLink: azsvmlr.NextLink,
@@ -323,7 +150,7 @@ func ConvertVirtualMachineListResult20170330To20180401(azsvmlr azscompute.Virtua
 	if azsvmlr.Value != nil {
 		svm := []compute.VirtualMachine{}
 		for _, vvm := range *azsvmlr.Value {
-			vm := ConvertVirtualMachine20170330To20180401(vvm)
+			vm := ConvertVirtualMachine(vvm)
 			svm = append(svm, vm)
 		}
 		vmlr.Value = &svm
@@ -331,96 +158,34 @@ func ConvertVirtualMachineListResult20170330To20180401(azsvmlr azscompute.Virtua
 	return vmlr
 }
 
-//ConvertVirtualMachineExtensionInstanceView20170330To20180401 converts *[]compute.VirtualMachineExtensionInstanceView from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineExtensionInstanceView20170330To20180401(azsvmei *azscompute.VirtualMachineExtensionInstanceView) *compute.VirtualMachineExtensionInstanceView {
+//ConvertVirtualMachineExtensionInstanceView converts *[]compute.VirtualMachineExtensionInstanceView from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineExtensionInstanceView(azsvmei *azscompute.VirtualMachineExtensionInstanceView) *compute.VirtualMachineExtensionInstanceView {
 	if azsvmei == nil {
 		return nil
 	}
-	vme := compute.VirtualMachineExtensionInstanceView{
+	return &compute.VirtualMachineExtensionInstanceView{
 		Name:               azsvmei.Name,
 		Type:               azsvmei.Type,
 		TypeHandlerVersion: azsvmei.TypeHandlerVersion,
+		Substatuses:        ConvertInstanceViewStatusSlice(azsvmei.Substatuses),
+		Statuses:           ConvertInstanceViewStatusSlice(azsvmei.Statuses),
 	}
-
-	if azsvmei.Substatuses != nil {
-		svmss := []compute.InstanceViewStatus{}
-		for _, vsvmss := range *azsvmei.Substatuses {
-			vmss := compute.InstanceViewStatus{
-				Code:          vsvmss.Code,
-				Level:         compute.StatusLevelTypes(string(vsvmss.Level)),
-				DisplayStatus: vsvmss.DisplayStatus,
-				Message:       vsvmss.Message,
-				Time:          vsvmss.Time,
-			}
-			svmss = append(svmss, vmss)
-		}
-	}
-
-	if azsvmei.Statuses != nil {
-		svmss1 := []compute.InstanceViewStatus{}
-		for _, vsvmss1 := range *azsvmei.Statuses {
-			vmss1 := compute.InstanceViewStatus{
-				Code:          vsvmss1.Code,
-				Level:         compute.StatusLevelTypes(string(vsvmss1.Level)),
-				DisplayStatus: vsvmss1.DisplayStatus,
-				Message:       vsvmss1.Message,
-				Time:          vsvmss1.Time,
-			}
-			svmss1 = append(svmss1, vmss1)
-		}
-	}
-
-	return &vme
 }
 
-//ConvertVirtualMachineExtensionInstanceViewSlice20170330To20180401 converts *compute.VirtualMachineExtensionInstanceView from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineExtensionInstanceViewSlice20170330To20180401(sazsvmei *[]azscompute.VirtualMachineExtensionInstanceView) *[]compute.VirtualMachineExtensionInstanceView {
+//ConvertVirtualMachineExtensionInstanceViewSlice converts *compute.VirtualMachineExtensionInstanceView from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineExtensionInstanceViewSlice(sazsvmei *[]azscompute.VirtualMachineExtensionInstanceView) *[]compute.VirtualMachineExtensionInstanceView {
 	if sazsvmei == nil {
 		return nil
 	}
 	svme := []compute.VirtualMachineExtensionInstanceView{}
 	for _, vsvme := range *sazsvmei {
-		vme := compute.VirtualMachineExtensionInstanceView{
-			Name:               vsvme.Name,
-			Type:               vsvme.Type,
-			TypeHandlerVersion: vsvme.TypeHandlerVersion,
-		}
-
-		if vsvme.Substatuses != nil {
-			svmss := []compute.InstanceViewStatus{}
-			for _, vsvmss := range *vsvme.Substatuses {
-				vmss := compute.InstanceViewStatus{
-					Code:          vsvmss.Code,
-					Level:         compute.StatusLevelTypes(string(vsvmss.Level)),
-					DisplayStatus: vsvmss.DisplayStatus,
-					Message:       vsvmss.Message,
-					Time:          vsvmss.Time,
-				}
-				svmss = append(svmss, vmss)
-			}
-		}
-
-		if vsvme.Statuses != nil {
-			svmss1 := []compute.InstanceViewStatus{}
-			for _, vsvmss1 := range *vsvme.Statuses {
-				vmss1 := compute.InstanceViewStatus{
-					Code:          vsvmss1.Code,
-					Level:         compute.StatusLevelTypes(string(vsvmss1.Level)),
-					DisplayStatus: vsvmss1.DisplayStatus,
-					Message:       vsvmss1.Message,
-					Time:          vsvmss1.Time,
-				}
-				svmss1 = append(svmss1, vmss1)
-			}
-		}
-
-		svme = append(svme, vme)
+		svme = append(svme, *ConvertVirtualMachineExtensionInstanceView(&vsvme))
 	}
 	return &svme
 }
 
-//ConvertPlan20170330To20180401 converts *compute.Plan from version 2017-03-30 to 2018-04-01
-func ConvertPlan20170330To20180401(azsp *azscompute.Plan) *compute.Plan {
+//ConvertPlan converts *compute.Plan from version 2017-03-30 to 2018-04-01
+func ConvertPlan(azsp *azscompute.Plan) *compute.Plan {
 	if azsp == nil {
 		return nil
 	}
@@ -432,8 +197,8 @@ func ConvertPlan20170330To20180401(azsp *azscompute.Plan) *compute.Plan {
 	}
 }
 
-//ConvertSku20170330To20180401 converts *compute.Sku from version 2017-03-30 to 2018-04-01
-func ConvertSku20170330To20180401(azss *azscompute.Sku) *compute.Sku {
+//ConvertFromSku converts *compute.Sku from version 2017-03-30 to 2018-04-01
+func ConvertFromSku(azss *azscompute.Sku) *compute.Sku {
 	if azss == nil {
 		return nil
 	}
@@ -444,8 +209,20 @@ func ConvertSku20170330To20180401(azss *azscompute.Sku) *compute.Sku {
 	}
 }
 
-//ConvertVirtualMachineScaleSetIdentity20170330To20180401 converts *compute.VirtualMachineScaleSetIdentity from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetIdentity20170330To20180401(azsi *azscompute.VirtualMachineScaleSetIdentity) *compute.VirtualMachineScaleSetIdentity {
+//ConvertToSku converts *compute.Sku from version 2018-04-01 to 2017-03-30
+func ConvertToSku(azs *compute.Sku) *azscompute.Sku {
+	if azs == nil {
+		return nil
+	}
+	return &azscompute.Sku{
+		Name:     azs.Name,
+		Tier:     azs.Tier,
+		Capacity: azs.Capacity,
+	}
+}
+
+//ConvertVirtualMachineScaleSetIdentity converts *compute.VirtualMachineScaleSetIdentity from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetIdentity(azsi *azscompute.VirtualMachineScaleSetIdentity) *compute.VirtualMachineScaleSetIdentity {
 	if azsi == nil {
 		return nil
 	}
@@ -457,8 +234,8 @@ func ConvertVirtualMachineScaleSetIdentity20170330To20180401(azsi *azscompute.Vi
 	}
 }
 
-//ConvertUpgradePolicy20170330To20180401 converts *compute.UpgradePolicy from version 2017-03-30 to 2018-04-01
-func ConvertUpgradePolicy20170330To20180401(azs *azscompute.UpgradePolicy) *compute.UpgradePolicy {
+//ConvertUpgradePolicy converts *compute.UpgradePolicy from version 2017-03-30 to 2018-04-01
+func ConvertUpgradePolicy(azs *azscompute.UpgradePolicy) *compute.UpgradePolicy {
 	if azs == nil {
 		return nil
 	}
@@ -483,17 +260,17 @@ func ConvertUpgradePolicy20170330To20180401(azs *azscompute.UpgradePolicy) *comp
 	return up
 }
 
-//ConvertVirtualMachineScaleSetVMProfile20170330To20180401 converts *compute.VirtualMachineScaleSetVMProfile from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetVMProfile20170330To20180401(azs *azscompute.VirtualMachineScaleSetVMProfile) *compute.VirtualMachineScaleSetVMProfile {
+//ConvertVirtualMachineScaleSetVMProfile converts *compute.VirtualMachineScaleSetVMProfile from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetVMProfile(azs *azscompute.VirtualMachineScaleSetVMProfile) *compute.VirtualMachineScaleSetVMProfile {
 	if azs == nil {
 		return nil
 	}
 	vmp := compute.VirtualMachineScaleSetVMProfile{
-		OsProfile:          ConvertVirtualMachineScaleSetOSProfile20170330To20180401(azs.OsProfile),
-		StorageProfile:     ConvertVirtualMachineScaleSetStorageProfile20170330To20180401(azs.StorageProfile),
-		NetworkProfile:     ConvertVirtualMachineScaleSetNetworkProfile20170330To20180401(azs.NetworkProfile),
-		DiagnosticsProfile: ConvertDiagnosticsProfile20170330To20180401(azs.DiagnosticsProfile),
-		ExtensionProfile:   ConvertVirtualMachineScaleSetExtensionProfile20170330To20180401(azs.ExtensionProfile),
+		OsProfile:          ConvertVirtualMachineScaleSetOSProfile(azs.OsProfile),
+		StorageProfile:     ConvertVirtualMachineScaleSetStorageProfile(azs.StorageProfile),
+		NetworkProfile:     ConvertVirtualMachineScaleSetNetworkProfile(azs.NetworkProfile),
+		DiagnosticsProfile: ConvertDiagnosticsProfile(azs.DiagnosticsProfile),
+		ExtensionProfile:   ConvertVirtualMachineScaleSetExtensionProfile(azs.ExtensionProfile),
 		LicenseType:        azs.LicenseType,
 		Priority:           "", // empty in azure stack
 		EvictionPolicy:     "", // empty in azure stack
@@ -501,8 +278,8 @@ func ConvertVirtualMachineScaleSetVMProfile20170330To20180401(azs *azscompute.Vi
 	return &vmp
 }
 
-//ConvertVirtualMachineScaleSetOSProfile20170330To20180401 converts *compute.VirtualMachineScaleSetOSProfile from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetOSProfile20170330To20180401(azs *azscompute.VirtualMachineScaleSetOSProfile) *compute.VirtualMachineScaleSetOSProfile {
+//ConvertVirtualMachineScaleSetOSProfile converts *compute.VirtualMachineScaleSetOSProfile from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetOSProfile(azs *azscompute.VirtualMachineScaleSetOSProfile) *compute.VirtualMachineScaleSetOSProfile {
 	if azs == nil {
 		return nil
 	}
@@ -511,15 +288,15 @@ func ConvertVirtualMachineScaleSetOSProfile20170330To20180401(azs *azscompute.Vi
 		AdminUsername:        azs.AdminUsername,
 		AdminPassword:        azs.AdminPassword,
 		CustomData:           azs.CustomData,
-		WindowsConfiguration: ConvertWindowsConfiguration20170330To20180401(azs.WindowsConfiguration),
-		LinuxConfiguration:   ConvertLinuxConfiguration20170330To20180401(azs.LinuxConfiguration),
-		Secrets:              ConvertVaultSecretGroup20170330To20180401(azs.Secrets),
+		WindowsConfiguration: ConvertWindowsConfiguration(azs.WindowsConfiguration),
+		LinuxConfiguration:   ConvertLinuxConfiguration(azs.LinuxConfiguration),
+		Secrets:              ConvertVaultSecretGroup(azs.Secrets),
 	}
 	return &op
 }
 
-//ConvertWindowsConfiguration20170330To20180401 converts *compute.WindowsConfiguration from version 2017-03-30 to 2018-04-01
-func ConvertWindowsConfiguration20170330To20180401(azs *azscompute.WindowsConfiguration) *compute.WindowsConfiguration {
+//ConvertWindowsConfiguration converts *compute.WindowsConfiguration from version 2017-03-30 to 2018-04-01
+func ConvertWindowsConfiguration(azs *azscompute.WindowsConfiguration) *compute.WindowsConfiguration {
 	if azs == nil {
 		return nil
 	}
@@ -545,8 +322,8 @@ func ConvertWindowsConfiguration20170330To20180401(azs *azscompute.WindowsConfig
 	return &opwc
 }
 
-//ConvertLinuxConfiguration20170330To20180401 converts *compute.LinuxConfiguration from version 2017-03-30 to 2018-04-01
-func ConvertLinuxConfiguration20170330To20180401(azs *azscompute.LinuxConfiguration) *compute.LinuxConfiguration {
+//ConvertLinuxConfiguration converts *compute.LinuxConfiguration from version 2017-03-30 to 2018-04-01
+func ConvertLinuxConfiguration(azs *azscompute.LinuxConfiguration) *compute.LinuxConfiguration {
 	if azs == nil {
 		return nil
 	}
@@ -573,8 +350,8 @@ func ConvertLinuxConfiguration20170330To20180401(azs *azscompute.LinuxConfigurat
 	return &oplc
 }
 
-//ConvertVaultSecretGroup20170330To20180401 converts *[]compute.VaultSecretGroup from version 2017-03-30 to 2018-04-01
-func ConvertVaultSecretGroup20170330To20180401(azs *[]azscompute.VaultSecretGroup) *[]compute.VaultSecretGroup {
+//ConvertVaultSecretGroup converts *[]compute.VaultSecretGroup from version 2017-03-30 to 2018-04-01
+func ConvertVaultSecretGroup(azs *[]azscompute.VaultSecretGroup) *[]compute.VaultSecretGroup {
 	if azs == nil {
 		return nil
 	}
@@ -605,8 +382,8 @@ func ConvertVaultSecretGroup20170330To20180401(azs *[]azscompute.VaultSecretGrou
 	return &sops
 }
 
-//ConvertImageReference20170330To20180401 converts *compute.ImageReference from version 2017-03-30 to 2018-04-01
-func ConvertImageReference20170330To20180401(azs *azscompute.ImageReference) *compute.ImageReference {
+//ConvertImageReference converts *compute.ImageReference from version 2017-03-30 to 2018-04-01
+func ConvertImageReference(azs *azscompute.ImageReference) *compute.ImageReference {
 	if azs == nil {
 		return nil
 	}
@@ -620,8 +397,8 @@ func ConvertImageReference20170330To20180401(azs *azscompute.ImageReference) *co
 	}
 }
 
-//ConvertVirtualMachineScaleSetOSDisk20170330To20180401 converts *compute.VirtualMachineScaleSetOSDisk from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetOSDisk20170330To20180401(azs *azscompute.VirtualMachineScaleSetOSDisk) *compute.VirtualMachineScaleSetOSDisk {
+//ConvertVirtualMachineScaleSetOSDisk converts *compute.VirtualMachineScaleSetOSDisk from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetOSDisk(azs *azscompute.VirtualMachineScaleSetOSDisk) *compute.VirtualMachineScaleSetOSDisk {
 	if azs == nil {
 		return nil
 	}
@@ -633,7 +410,7 @@ func ConvertVirtualMachineScaleSetOSDisk20170330To20180401(azs *azscompute.Virtu
 		CreateOption:            compute.DiskCreateOptionTypes(string(azs.CreateOption)),
 		DiskSizeGB:              nil, // empty in azs.DiskSizeGB,
 		OsType:                  compute.OperatingSystemTypes(string(azs.OsType)),
-		Image:                   ConvertVirtualHardDisk20170330To20180401(azs.Image),
+		Image:                   ConvertVirtualHardDisk(azs.Image),
 		VhdContainers:           azs.VhdContainers,
 	}
 
@@ -645,8 +422,8 @@ func ConvertVirtualMachineScaleSetOSDisk20170330To20180401(azs *azscompute.Virtu
 	return &od
 }
 
-//ConvertVirtualMachineScaleSetDataDisk20170330To20180401 converts *[]compute.VirtualMachineScaleSetDataDisk from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetDataDisk20170330To20180401(azs *[]azscompute.VirtualMachineScaleSetDataDisk) *[]compute.VirtualMachineScaleSetDataDisk {
+//ConvertVirtualMachineScaleSetDataDisk converts *[]compute.VirtualMachineScaleSetDataDisk from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetDataDisk(azs *[]azscompute.VirtualMachineScaleSetDataDisk) *[]compute.VirtualMachineScaleSetDataDisk {
 	if azs == nil {
 		return nil
 	}
@@ -672,8 +449,8 @@ func ConvertVirtualMachineScaleSetDataDisk20170330To20180401(azs *[]azscompute.V
 	return &sod
 }
 
-//ConvertVirtualHardDisk20170330To20180401 converts *compute.VirtualHardDisk from version 2017-03-30 to 2018-04-01
-func ConvertVirtualHardDisk20170330To20180401(azs *azscompute.VirtualHardDisk) *compute.VirtualHardDisk {
+//ConvertVirtualHardDisk converts *compute.VirtualHardDisk from version 2017-03-30 to 2018-04-01
+func ConvertVirtualHardDisk(azs *azscompute.VirtualHardDisk) *compute.VirtualHardDisk {
 	if azs == nil {
 		return nil
 	}
@@ -682,20 +459,20 @@ func ConvertVirtualHardDisk20170330To20180401(azs *azscompute.VirtualHardDisk) *
 	}
 }
 
-//ConvertVirtualMachineScaleSetStorageProfile20170330To20180401 converts *compute.VirtualMachineScaleSetStorageProfile from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetStorageProfile20170330To20180401(azs *azscompute.VirtualMachineScaleSetStorageProfile) *compute.VirtualMachineScaleSetStorageProfile {
+//ConvertVirtualMachineScaleSetStorageProfile converts *compute.VirtualMachineScaleSetStorageProfile from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetStorageProfile(azs *azscompute.VirtualMachineScaleSetStorageProfile) *compute.VirtualMachineScaleSetStorageProfile {
 	if azs == nil {
 		return nil
 	}
 	return &compute.VirtualMachineScaleSetStorageProfile{
-		ImageReference: ConvertImageReference20170330To20180401(azs.ImageReference),
-		OsDisk:         ConvertVirtualMachineScaleSetOSDisk20170330To20180401(azs.OsDisk),
-		DataDisks:      ConvertVirtualMachineScaleSetDataDisk20170330To20180401(azs.DataDisks),
+		ImageReference: ConvertImageReference(azs.ImageReference),
+		OsDisk:         ConvertVirtualMachineScaleSetOSDisk(azs.OsDisk),
+		DataDisks:      ConvertVirtualMachineScaleSetDataDisk(azs.DataDisks),
 	}
 }
 
-//ConvertVirtualMachineScaleSetNetworkProfile20170330To20180401 converts *compute.VirtualMachineScaleSetNetworkProfile from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetNetworkProfile20170330To20180401(azs *azscompute.VirtualMachineScaleSetNetworkProfile) *compute.VirtualMachineScaleSetNetworkProfile {
+//ConvertVirtualMachineScaleSetNetworkProfile converts *compute.VirtualMachineScaleSetNetworkProfile from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetNetworkProfile(azs *azscompute.VirtualMachineScaleSetNetworkProfile) *compute.VirtualMachineScaleSetNetworkProfile {
 	if azs == nil {
 		return nil
 	}
@@ -755,9 +532,9 @@ func ConvertVirtualMachineScaleSetNetworkProfile20170330To20180401(azs *azscompu
 					}
 
 					ipc.PrivateIPAddressVersion = compute.IPVersion(string(vsipc.PrivateIPAddressVersion))
-					ipc.ApplicationGatewayBackendAddressPools = ConvertSubResource20170330To20180401(vsipc.ApplicationGatewayBackendAddressPools)
-					ipc.LoadBalancerBackendAddressPools = ConvertSubResource20170330To20180401(vsipc.LoadBalancerBackendAddressPools)
-					ipc.LoadBalancerInboundNatPools = ConvertSubResource20170330To20180401(vsipc.LoadBalancerInboundNatPools)
+					ipc.ApplicationGatewayBackendAddressPools = ConvertSubResourceSlice(vsipc.ApplicationGatewayBackendAddressPools)
+					ipc.LoadBalancerBackendAddressPools = ConvertSubResourceSlice(vsipc.LoadBalancerBackendAddressPools)
+					ipc.LoadBalancerInboundNatPools = ConvertSubResourceSlice(vsipc.LoadBalancerInboundNatPools)
 					sipc = append(sipc, ipc)
 				}
 				nc.IPConfigurations = &sipc
@@ -772,8 +549,19 @@ func ConvertVirtualMachineScaleSetNetworkProfile20170330To20180401(azs *azscompu
 	return &np
 }
 
-//ConvertSubResource20170330To20180401 converts *[]compute.SubResource from version 2017-03-30 to 2018-04-01
-func ConvertSubResource20170330To20180401(azs *[]azscompute.SubResource) *[]compute.SubResource {
+// ConvertSubResource converts *compute.SubResource from version 2017-03-30 to 2018-04-01
+func ConvertSubResource(azs *azscompute.SubResource) *compute.SubResource {
+
+	if azs == nil {
+		return nil
+	}
+	return &compute.SubResource{
+		ID: azs.ID,
+	}
+}
+
+//ConvertSubResourceSlice converts *[]compute.SubResource from version 2017-03-30 to 2018-04-01
+func ConvertSubResourceSlice(azs *[]azscompute.SubResource) *[]compute.SubResource {
 
 	if azs == nil {
 		return nil
@@ -781,27 +569,24 @@ func ConvertSubResource20170330To20180401(azs *[]azscompute.SubResource) *[]comp
 
 	ssr := []compute.SubResource{}
 	for _, vssr := range *azs {
-		sr := compute.SubResource{
-			ID: vssr.ID,
-		}
-		ssr = append(ssr, sr)
+		ssr = append(ssr, *ConvertSubResource(&vssr))
 	}
 	return &ssr
 }
 
-//ConvertDiagnosticsProfile20170330To20180401 converts *compute.DiagnosticsProfile from version 2017-03-30 to 2018-04-01
-func ConvertDiagnosticsProfile20170330To20180401(azs *azscompute.DiagnosticsProfile) *compute.DiagnosticsProfile {
+//ConvertDiagnosticsProfile converts *compute.DiagnosticsProfile from version 2017-03-30 to 2018-04-01
+func ConvertDiagnosticsProfile(azs *azscompute.DiagnosticsProfile) *compute.DiagnosticsProfile {
 	if azs == nil {
 		return nil
 	}
 
 	dp := compute.DiagnosticsProfile{}
-	dp.BootDiagnostics = ConvertBootDiagnostics20170330To20180401(azs.BootDiagnostics)
+	dp.BootDiagnostics = ConvertBootDiagnostics(azs.BootDiagnostics)
 	return &dp
 }
 
-//ConvertBootDiagnostics20170330To20180401 converts *compute.BootDiagnostics from version 2017-03-30 to 2018-04-01
-func ConvertBootDiagnostics20170330To20180401(azs *azscompute.BootDiagnostics) *compute.BootDiagnostics {
+//ConvertBootDiagnostics converts *compute.BootDiagnostics from version 2017-03-30 to 2018-04-01
+func ConvertBootDiagnostics(azs *azscompute.BootDiagnostics) *compute.BootDiagnostics {
 	if azs == nil {
 		return nil
 	}
@@ -812,8 +597,8 @@ func ConvertBootDiagnostics20170330To20180401(azs *azscompute.BootDiagnostics) *
 	}
 }
 
-//ConvertVirtualMachineScaleSetExtensionProfile20170330To20180401 converts *compute.DiagnosticsProfile from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetExtensionProfile20170330To20180401(azs *azscompute.VirtualMachineScaleSetExtensionProfile) *compute.VirtualMachineScaleSetExtensionProfile {
+//ConvertVirtualMachineScaleSetExtensionProfile converts *compute.DiagnosticsProfile from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetExtensionProfile(azs *azscompute.VirtualMachineScaleSetExtensionProfile) *compute.VirtualMachineScaleSetExtensionProfile {
 	if azs == nil {
 		return nil
 	}
@@ -843,8 +628,8 @@ func ConvertVirtualMachineScaleSetExtensionProfile20170330To20180401(azs *azscom
 	return &ep
 }
 
-//ConvertVirtualMachineScaleSetListResult20170330To20180401 converts *compute.VirtualMachineScaleSetListResult from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetListResult20170330To20180401(azs *azscompute.VirtualMachineScaleSetListResult) *compute.VirtualMachineScaleSetListResult {
+//ConvertVirtualMachineScaleSetListResult converts *compute.VirtualMachineScaleSetListResult from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetListResult(azs *azscompute.VirtualMachineScaleSetListResult) *compute.VirtualMachineScaleSetListResult {
 	if azs == nil {
 		return nil
 	}
@@ -852,19 +637,285 @@ func ConvertVirtualMachineScaleSetListResult20170330To20180401(azs *azscompute.V
 	return &compute.VirtualMachineScaleSetListResult{
 		Response: azs.Response,
 		NextLink: azs.NextLink,
-		Value:    ConvertVirtualMachineScaleSetSlice20170330To20180401(azs.Value),
+		Value:    ConvertVirtualMachineScaleSetSlice(azs.Value),
 	}
 }
 
-//ConvertVirtualMachineScaleSetListResultPage20170330To20180401 converts compute.VirtualMachineScaleSetListResult from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetListResultPage20170330To20180401(azs azscompute.VirtualMachineScaleSetListResultPage) compute.VirtualMachineScaleSetListResultPage {
+//ConvertVirtualMachineScaleSetVMListResult converts *compute.VirtualMachineScaleSetVMListResult from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetVMListResult(azs *azscompute.VirtualMachineScaleSetVMListResult) *compute.VirtualMachineScaleSetVMListResult {
 	if azs == nil {
 		return nil
 	}
 
-	return &compute.VirtualMachineScaleSetListResultPage{
+	return &compute.VirtualMachineScaleSetVMListResult{
 		Response: azs.Response,
 		NextLink: azs.NextLink,
-		Value:    ConvertVirtualMachineScaleSetListResult20170330To20180401(),
+		Value:    ConvertVirtualMachineScaleSetVMSlice(azs.Value),
 	}
+}
+
+// ConvertVirtualMachineScaleSetVMSlice converts *[]compute.VirtualMachineScaleSetVM from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetVMSlice(azsvmss *[]azscompute.VirtualMachineScaleSetVM) *[]compute.VirtualMachineScaleSetVM {
+	if azsvmss == nil {
+		return nil
+	}
+
+	svmss := []compute.VirtualMachineScaleSetVM{}
+	for _, vvmss := range *azsvmss {
+		svmss = append(svmss, ConvertVirtualMachineScaleSetVM(vvmss))
+	}
+	return &svmss
+}
+
+// ConvertVirtualMachineScaleSetVM converts compute.VirtualMachine from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetVM(azsvmss azscompute.VirtualMachineScaleSetVM) compute.VirtualMachineScaleSetVM {
+	vmss := compute.VirtualMachineScaleSetVM{
+		Response:   azsvmss.Response,
+		InstanceID: azsvmss.InstanceID,
+		Sku:        ConvertFromSku(azsvmss.Sku),
+		Plan:       ConvertPlan(azsvmss.Plan),
+		Zones:      nil, //empty in azsvmss.Zones,
+		ID:         azsvmss.ID,
+		Name:       azsvmss.Name,
+		Type:       azsvmss.Type,
+		Location:   azsvmss.Location,
+		Tags:       azsvmss.Tags,
+	}
+
+	vmss.LatestModelApplied = azsvmss.LatestModelApplied
+	vmss.VMID = azsvmss.VMID
+	vmss.InstanceView = ConvertVirtualMachineScaleSetVMInstanceView(azsvmss.InstanceView)
+	vmss.HardwareProfile = ConvertHardwareProfile(azsvmss.HardwareProfile)
+	vmss.StorageProfile = ConvertStorageProfile(azsvmss.StorageProfile)
+	vmss.NetworkProfile = ConvertNetworkProfile(azsvmss.NetworkProfile)
+	vmss.DiagnosticsProfile = ConvertDiagnosticsProfile(azsvmss.DiagnosticsProfile)
+	vmss.AvailabilitySet = ConvertSubResource(azsvmss.AvailabilitySet)
+
+	vmss.ProvisioningState = azsvmss.ProvisioningState
+	return vmss
+}
+
+// ConvertHardwareProfile converts compute.HardwareProfile from version 2017-03-30 to 2018-04-01
+func ConvertHardwareProfile(azs *azscompute.HardwareProfile) *compute.HardwareProfile {
+	if azs == nil {
+		return nil
+	}
+
+	return &compute.HardwareProfile{
+		VMSize: compute.VirtualMachineSizeTypes(string(azs.VMSize)),
+	}
+}
+
+// ConvertVirtualMachineScaleSetVMInstanceView converts compute.VirtualMachineScaleSetVMInstanceView from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetVMInstanceView(azs *azscompute.VirtualMachineScaleSetVMInstanceView) *compute.VirtualMachineScaleSetVMInstanceView {
+	if azs == nil {
+		return nil
+	}
+
+	iw := compute.VirtualMachineScaleSetVMInstanceView{
+		Response:                  azs.Response,
+		PlatformUpdateDomain:      azs.PlatformUpdateDomain,
+		PlatformFaultDomain:       azs.PlatformFaultDomain,
+		RdpThumbPrint:             azs.RdpThumbPrint,
+		VMAgent:                   ConvertVirtualMachineAgentInstanceView(azs.VMAgent),
+		MaintenanceRedeployStatus: nil, // empty in ConvertMaintenanceRedeployStatus(azs.MaintenanceRedeployStatus)
+
+		Disks:            ConvertDiskInstanceViewSlice(azs.Disks),
+		Extensions:       ConvertVirtualMachineExtensionInstanceViewSlice(azs.Extensions),
+		BootDiagnostics:  ConvertBootDiagnosticsInstanceView(azs.BootDiagnostics),
+		Statuses:         ConvertInstanceViewStatusSlice(azs.Statuses),
+		PlacementGroupID: azs.PlacementGroupID,
+	}
+
+	return &iw
+}
+
+// ConvertVirtualMachineAgentInstanceView converts *compute.VirtualMachineAgentInstanceView from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineAgentInstanceView(azs *azscompute.VirtualMachineAgentInstanceView) *compute.VirtualMachineAgentInstanceView {
+	if azs == nil {
+		return nil
+	}
+
+	va := compute.VirtualMachineAgentInstanceView{
+		VMAgentVersion: azs.VMAgentVersion,
+	}
+
+	if azs.ExtensionHandlers != nil {
+		sehi := []compute.VirtualMachineExtensionHandlerInstanceView{}
+		for _, vehi := range *azs.ExtensionHandlers {
+			ehi := compute.VirtualMachineExtensionHandlerInstanceView{
+				Type:               vehi.Type,
+				TypeHandlerVersion: vehi.TypeHandlerVersion,
+			}
+
+			ehi.Status = ConvertInstanceViewStatus(vehi.Status)
+			sehi = append(sehi, ehi)
+		}
+		va.ExtensionHandlers = &sehi
+	}
+
+	va.Statuses = ConvertInstanceViewStatusSlice(azs.Statuses)
+
+	return &va
+
+}
+
+// ConvertMaintenanceRedeployStatus converts *compute.MaintenanceRedeployStatus from version 2017-03-30 to 2018-04-01
+func ConvertMaintenanceRedeployStatus(azs *azscompute.MaintenanceRedeployStatus) *compute.MaintenanceRedeployStatus {
+	if azs == nil {
+		return nil
+	}
+	return &compute.MaintenanceRedeployStatus{
+		IsCustomerInitiatedMaintenanceAllowed: azs.IsCustomerInitiatedMaintenanceAllowed,
+		PreMaintenanceWindowStartTime:         azs.PreMaintenanceWindowStartTime,
+		PreMaintenanceWindowEndTime:           azs.PreMaintenanceWindowEndTime,
+		MaintenanceWindowStartTime:            azs.MaintenanceWindowStartTime,
+		MaintenanceWindowEndTime:              azs.MaintenanceWindowEndTime,
+		LastOperationResultCode:               compute.MaintenanceOperationResultCodeTypes(string(azs.LastOperationResultCode)),
+		LastOperationMessage:                  azs.LastOperationMessage,
+	}
+}
+
+// ConvertBootDiagnosticsInstanceView converts *compute.BootDiagnosticsInstanceView from version 2017-03-30 to 2018-04-01
+func ConvertBootDiagnosticsInstanceView(azs *azscompute.BootDiagnosticsInstanceView) *compute.BootDiagnosticsInstanceView {
+	if azs == nil {
+		return nil
+	}
+
+	return &compute.BootDiagnosticsInstanceView{
+		ConsoleScreenshotBlobURI: azs.ConsoleScreenshotBlobURI,
+		SerialConsoleLogBlobURI:  azs.SerialConsoleLogBlobURI,
+	}
+}
+
+// ConvertDiskInstanceViewSlice converts *[]compute.DiskInstanceView from version 2017-03-30 to 2018-04-01
+func ConvertDiskInstanceViewSlice(azs *[]azscompute.DiskInstanceView) *[]compute.DiskInstanceView {
+
+	if azs == nil {
+		return nil
+	}
+	svmid := []compute.DiskInstanceView{}
+	for _, vsvmid := range *azs {
+		vmid := compute.DiskInstanceView{
+			Name: vsvmid.Name,
+		}
+		if vsvmid.EncryptionSettings != nil {
+			ses := []compute.DiskEncryptionSettings{}
+			for _, vses := range *vsvmid.EncryptionSettings {
+				es := compute.DiskEncryptionSettings{
+					Enabled: vses.Enabled,
+				}
+				if vses.DiskEncryptionKey != nil {
+					es.DiskEncryptionKey = &compute.KeyVaultSecretReference{
+						SecretURL: vses.DiskEncryptionKey.SecretURL,
+					}
+					if vses.DiskEncryptionKey.SourceVault != nil {
+						es.DiskEncryptionKey.SourceVault = &compute.SubResource{
+							ID: vses.DiskEncryptionKey.SourceVault.ID,
+						}
+					}
+				}
+				ses = append(ses, es)
+			}
+			vmid.EncryptionSettings = &ses
+		}
+
+		svmid = append(svmid, vmid)
+	}
+
+	return &svmid
+}
+
+// ConvertInstanceViewStatusSlice converts *[]compute.InstanceViewStatus from version 2017-03-30 to 2018-04-01
+func ConvertInstanceViewStatusSlice(azs *[]azscompute.InstanceViewStatus) *[]compute.InstanceViewStatus {
+	if azs == nil {
+		return nil
+	}
+	svmss1 := []compute.InstanceViewStatus{}
+	for _, vsvmss1 := range *azs {
+		svmss1 = append(svmss1, *ConvertInstanceViewStatus(&vsvmss1))
+	}
+	return &svmss1
+}
+
+// ConvertInstanceViewStatus converts *compute.InstanceViewStatus from version 2017-03-30 to 2018-04-01
+func ConvertInstanceViewStatus(azs *azscompute.InstanceViewStatus) *compute.InstanceViewStatus {
+	if azs == nil {
+		return nil
+	}
+	return &compute.InstanceViewStatus{
+		Code:          azs.Code,
+		Level:         compute.StatusLevelTypes(string(azs.Level)),
+		DisplayStatus: azs.DisplayStatus,
+		Message:       azs.Message,
+		Time:          azs.Time,
+	}
+}
+
+// ConvertStorageProfile converts *compute.StorageProfile from version 2017-03-30 to 2018-04-01
+func ConvertStorageProfile(azs *azscompute.StorageProfile) *compute.StorageProfile {
+	if azs == nil {
+		return nil
+	}
+	sp := compute.StorageProfile{}
+	sp.ImageReference = ConvertImageReference(azs.ImageReference)
+	if azs.OsDisk != nil {
+		od := compute.OSDisk{
+			OsType:                  compute.OperatingSystemTypes(string(azs.OsDisk.OsType)),
+			Name:                    azs.OsDisk.Name,
+			Caching:                 compute.CachingTypes(string(azs.OsDisk.Caching)),
+			WriteAcceleratorEnabled: to.BoolPtr(false),
+			CreateOption:            compute.DiskCreateOptionTypes(string(azs.OsDisk.CreateOption)),
+			DiskSizeGB:              azs.OsDisk.DiskSizeGB,
+		}
+		if azs.OsDisk.EncryptionSettings != nil {
+			odes := compute.DiskEncryptionSettings{}
+			od.EncryptionSettings = &odes
+		}
+		if azs.OsDisk.Vhd != nil {
+			odvhd := compute.VirtualHardDisk{
+				URI: azs.OsDisk.Vhd.URI,
+			}
+			od.Vhd = &odvhd
+		}
+		if azs.OsDisk.Image != nil {
+			odi := compute.VirtualHardDisk{
+				URI: azs.OsDisk.Image.URI,
+			}
+			od.Image = &odi
+		}
+		if azs.OsDisk.ManagedDisk != nil {
+			odm := compute.ManagedDiskParameters{
+				ID:                 azs.OsDisk.ManagedDisk.ID,
+				StorageAccountType: compute.StorageAccountTypes(string(azs.OsDisk.ManagedDisk.StorageAccountType)),
+			}
+			od.ManagedDisk = &odm
+		}
+	}
+	return &sp
+}
+
+// ConvertNetworkProfile converts *compute.NetworkProfile from version 2017-03-30 to 2018-04-01
+func ConvertNetworkProfile(azs *azscompute.NetworkProfile) *compute.NetworkProfile {
+
+	if azs == nil {
+		return nil
+	}
+	np := compute.NetworkProfile{}
+	snpn := []compute.NetworkInterfaceReference{}
+	for _, vsnpn := range *azs.NetworkInterfaces {
+		npn := compute.NetworkInterfaceReference{
+			ID: vsnpn.ID,
+		}
+
+		if vsnpn.NetworkInterfaceReferenceProperties != nil {
+			npn.NetworkInterfaceReferenceProperties = &compute.NetworkInterfaceReferenceProperties{
+				Primary: vsnpn.NetworkInterfaceReferenceProperties.Primary,
+			}
+		}
+
+		snpn = append(snpn, npn)
+	}
+	np.NetworkInterfaces = &snpn
+	return &np
 }
