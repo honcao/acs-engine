@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/Azure/acs-engine/pkg/api"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-05-01/resources"
+	"github.com/Azure/acs-engine/pkg/armhelpers"
+	azresources "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-05-01/resources"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,7 +21,7 @@ type DeploymentError struct {
 	StatusCode        int
 	Response          []byte
 	ProvisioningState string
-	OperationsLists   []resources.DeploymentOperationsListResult
+	OperationsLists   []azresources.DeploymentOperationsListResult
 }
 
 // Error implements error interface
@@ -57,8 +58,8 @@ func (e *DeploymentValidationError) Error() string {
 }
 
 // DeployTemplateSync deploys the template and returns ArmError
-func DeployTemplateSync(az ACSEngineClient, logger *logrus.Entry, resourceGroupName, deploymentName string, template map[string]interface{}, parameters map[string]interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultARMOperationTimeout)
+func DeployTemplateSync(az armhelpers.ACSEngineClient, logger *logrus.Entry, resourceGroupName, deploymentName string, template map[string]interface{}, parameters map[string]interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), armhelpers.DefaultARMOperationTimeout)
 	defer cancel()
 	deploymentExtended, err := az.DeployTemplate(ctx, resourceGroupName, deploymentName, template, parameters)
 	if err == nil {

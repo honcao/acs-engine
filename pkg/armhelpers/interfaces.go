@@ -63,6 +63,14 @@ type DiskListPage interface {
 	Values() []compute.Disk
 }
 
+//ProviderListResultPage is an interface for resources.ProviderListResultPage
+type ProviderListResultPage interface {
+	Next() error
+	NotDone() bool
+	Response() resources.ProviderListResult
+	Values() []resources.Provider
+}
+
 // ACSEngineClient is the interface used to talk to an Azure environment.
 // This interface exposes just the subset of Azure APIs and clients needed for
 // ACS-Engine.
@@ -146,7 +154,7 @@ type ACSEngineClient interface {
 
 	GetKubernetesClient(masterURL, kubeConfig string, interval, timeout time.Duration) (KubernetesClient, error)
 
-	ListProviders(ctx context.Context) (resources.ProviderListResultPage, error)
+	ListProviders(ctx context.Context) (ProviderListResultPage, error)
 
 	// DEPLOYMENTS
 

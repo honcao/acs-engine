@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-05-01/resources"
+	"github.com/Azure/acs-engine/pkg/armhelpers/azurestack/converter"
+
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources"
+	azresources "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-05-01/resources"
 	"github.com/Azure/go-autorest/autorest"
 	log "github.com/sirupsen/logrus"
 )
 
 // DeployTemplate implements the TemplateDeployer interface for the AzureClient client
-func (az *AzureClient) DeployTemplate(ctx context.Context, resourceGroupName, deploymentName string, template map[string]interface{}, parameters map[string]interface{}) (de resources.DeploymentExtended, err error) {
+func (az *AzureClient) DeployTemplate(ctx context.Context, resourceGroupName, deploymentName string, template map[string]interface{}, parameters map[string]interface{}) (de azresources.DeploymentExtended, err error) {
 	deployment := resources.Deployment{
 		Properties: &resources.DeploymentProperties{
 			Template:   &template,
@@ -33,7 +36,8 @@ func (az *AzureClient) DeployTemplate(ctx context.Context, resourceGroupName, de
 		return de, err
 	}
 
-	de, err = future.Result(az.deploymentsClient)
+	azsde, err := future.Result(az.deploymentsClient)
+	de = converter.ConvertDeploymentExtended(azsde)
 	if err != nil {
 		outcomeText = fmt.Sprintf("Error: %v", err)
 	}

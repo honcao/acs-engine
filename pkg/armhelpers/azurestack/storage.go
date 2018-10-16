@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/Azure/acs-engine/pkg/armhelpers"
+	"github.com/Azure/acs-engine/pkg/armhelpers/azurestack/converter"
 	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2018-02-01/storage"
 	azStorage "github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -15,7 +17,7 @@ type AzureStorageClient struct {
 }
 
 // GetStorageClient returns an authenticated client for the specified account.
-func (az *AzureClient) GetStorageClient(ctx context.Context, resourceGroup, accountName string) (ACSStorageClient, error) {
+func (az *AzureClient) GetStorageClient(ctx context.Context, resourceGroup, accountName string) (armhelpers.ACSStorageClient, error) {
 	keys, err := az.getStorageKeys(ctx, resourceGroup, accountName)
 	if err != nil {
 		return nil, err
@@ -37,7 +39,7 @@ func (az *AzureClient) getStorageKeys(ctx context.Context, resourceGroup, accoun
 		return nil, err
 	}
 
-	return *storageKeysResult.Keys, nil
+	return *converter.ConvertAccountKeySlice(storageKeysResult.Keys), nil
 }
 
 // DeleteBlob deletes the specified blob

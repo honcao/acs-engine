@@ -102,8 +102,20 @@ func ConvertVirtualMachine(azsvm azscompute.VirtualMachine) compute.VirtualMachi
 	return vm
 }
 
+// ConvertVirtualMachineSlice converts *[]compute.VirtualMachine from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineSlice(azs []azscompute.VirtualMachine) []compute.VirtualMachine {
+
+	sp := []compute.VirtualMachine{}
+	for _, vsp := range azs {
+		sp = append(sp, ConvertVirtualMachine(vsp))
+	}
+
+	return sp
+}
+
 // ConvertVirtualMachineScaleSetSlice converts *[]compute.VirtualMachine from version 2017-03-30 to 2018-04-01
 func ConvertVirtualMachineScaleSetSlice(azsvmss *[]azscompute.VirtualMachineScaleSet) *[]compute.VirtualMachineScaleSet {
+
 	if azsvmss == nil {
 		return nil
 	}
@@ -115,11 +127,21 @@ func ConvertVirtualMachineScaleSetSlice(azsvmss *[]azscompute.VirtualMachineScal
 	return &svmss
 }
 
+// ConvertVirtualMachineScaleSetSliceValue converts []compute.VirtualMachine from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetSliceValue(azsvmss []azscompute.VirtualMachineScaleSet) []compute.VirtualMachineScaleSet {
+
+	svmss := []compute.VirtualMachineScaleSet{}
+	for _, vvmss := range azsvmss {
+		svmss = append(svmss, ConvertVirtualMachineScaleSet(vvmss))
+	}
+	return svmss
+}
+
 // ConvertVirtualMachineScaleSet converts compute.VirtualMachine from version 2017-03-30 to 2018-04-01
 func ConvertVirtualMachineScaleSet(azsvmss azscompute.VirtualMachineScaleSet) compute.VirtualMachineScaleSet {
 	vmss := compute.VirtualMachineScaleSet{
 		Response: azsvmss.Response,
-		Sku:      ConvertFromSku(azsvmss.Sku),
+		Sku:      ConvertSku(azsvmss.Sku),
 		Plan:     ConvertPlan(azsvmss.Plan),
 		Identity: ConvertVirtualMachineScaleSetIdentity(azsvmss.Identity),
 		Zones:    azsvmss.Zones,
@@ -197,8 +219,8 @@ func ConvertPlan(azsp *azscompute.Plan) *compute.Plan {
 	}
 }
 
-//ConvertFromSku converts *compute.Sku from version 2017-03-30 to 2018-04-01
-func ConvertFromSku(azss *azscompute.Sku) *compute.Sku {
+//ConvertSku converts *compute.Sku from version 2017-03-30 to 2018-04-01
+func ConvertSku(azss *azscompute.Sku) *compute.Sku {
 	if azss == nil {
 		return nil
 	}
@@ -209,8 +231,8 @@ func ConvertFromSku(azss *azscompute.Sku) *compute.Sku {
 	}
 }
 
-//ConvertToSku converts *compute.Sku from version 2018-04-01 to 2017-03-30
-func ConvertToSku(azs *compute.Sku) *azscompute.Sku {
+//ConvertFromSku converts *compute.Sku from version 2018-04-01 to 2017-03-30
+func ConvertFromSku(azs *compute.Sku) *azscompute.Sku {
 	if azs == nil {
 		return nil
 	}
@@ -628,26 +650,18 @@ func ConvertVirtualMachineScaleSetExtensionProfile(azs *azscompute.VirtualMachin
 	return &ep
 }
 
-//ConvertVirtualMachineScaleSetListResult converts *compute.VirtualMachineScaleSetListResult from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetListResult(azs *azscompute.VirtualMachineScaleSetListResult) *compute.VirtualMachineScaleSetListResult {
-	if azs == nil {
-		return nil
-	}
-
-	return &compute.VirtualMachineScaleSetListResult{
+//ConvertVirtualMachineScaleSetListResult converts compute.VirtualMachineScaleSetListResult from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetListResult(azs azscompute.VirtualMachineScaleSetListResult) compute.VirtualMachineScaleSetListResult {
+	return compute.VirtualMachineScaleSetListResult{
 		Response: azs.Response,
 		NextLink: azs.NextLink,
 		Value:    ConvertVirtualMachineScaleSetSlice(azs.Value),
 	}
 }
 
-//ConvertVirtualMachineScaleSetVMListResult converts *compute.VirtualMachineScaleSetVMListResult from version 2017-03-30 to 2018-04-01
-func ConvertVirtualMachineScaleSetVMListResult(azs *azscompute.VirtualMachineScaleSetVMListResult) *compute.VirtualMachineScaleSetVMListResult {
-	if azs == nil {
-		return nil
-	}
-
-	return &compute.VirtualMachineScaleSetVMListResult{
+//ConvertVirtualMachineScaleSetVMListResult converts compute.VirtualMachineScaleSetVMListResult from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetVMListResult(azs azscompute.VirtualMachineScaleSetVMListResult) compute.VirtualMachineScaleSetVMListResult {
+	return compute.VirtualMachineScaleSetVMListResult{
 		Response: azs.Response,
 		NextLink: azs.NextLink,
 		Value:    ConvertVirtualMachineScaleSetVMSlice(azs.Value),
@@ -667,12 +681,21 @@ func ConvertVirtualMachineScaleSetVMSlice(azsvmss *[]azscompute.VirtualMachineSc
 	return &svmss
 }
 
+// ConvertVirtualMachineScaleSetVMSliceValue converts []compute.VirtualMachineScaleSetVM from version 2017-03-30 to 2018-04-01
+func ConvertVirtualMachineScaleSetVMSliceValue(azsvmss []azscompute.VirtualMachineScaleSetVM) []compute.VirtualMachineScaleSetVM {
+	svmss := []compute.VirtualMachineScaleSetVM{}
+	for _, vvmss := range azsvmss {
+		svmss = append(svmss, ConvertVirtualMachineScaleSetVM(vvmss))
+	}
+	return svmss
+}
+
 // ConvertVirtualMachineScaleSetVM converts compute.VirtualMachine from version 2017-03-30 to 2018-04-01
 func ConvertVirtualMachineScaleSetVM(azsvmss azscompute.VirtualMachineScaleSetVM) compute.VirtualMachineScaleSetVM {
 	vmss := compute.VirtualMachineScaleSetVM{
 		Response:   azsvmss.Response,
 		InstanceID: azsvmss.InstanceID,
-		Sku:        ConvertFromSku(azsvmss.Sku),
+		Sku:        ConvertSku(azsvmss.Sku),
 		Plan:       ConvertPlan(azsvmss.Plan),
 		Zones:      nil, //empty in azsvmss.Zones,
 		ID:         azsvmss.ID,
@@ -940,14 +963,51 @@ func ConvertCreationData(azs *azscompute.CreationData) *compute.CreationData {
 	return &compute.CreationData{}
 }
 
+// ConvertKeyVaultAndSecretReference converts *compute.KeyVaultAndSecretReference from version 2017-03-30 to 2018-04-01
+func ConvertKeyVaultAndSecretReference(azs *azscompute.KeyVaultAndSecretReference) *compute.KeyVaultAndSecretReference {
+
+	if azs == nil {
+		return nil
+	}
+	r := compute.KeyVaultAndSecretReference{
+		SecretURL: azs.SecretURL,
+	}
+	if azs.SourceVault != nil {
+		r.SourceVault = &compute.SourceVault{
+			ID: azs.SourceVault.ID,
+		}
+	}
+	return &r
+}
+
+// ConvertKeyVaultAndKeyReference converts *compute.KeyVaultAndKeyReference from version 2017-03-30 to 2018-04-01
+func ConvertKeyVaultAndKeyReference(azs *azscompute.KeyVaultAndKeyReference) *compute.KeyVaultAndKeyReference {
+
+	if azs == nil {
+		return nil
+	}
+	r := compute.KeyVaultAndKeyReference{
+		KeyURL: azs.KeyURL,
+	}
+	if azs.SourceVault != nil {
+		r.SourceVault = &compute.SourceVault{
+			ID: azs.SourceVault.ID,
+		}
+	}
+	return &r
+}
+
 // ConvertEncryptionSettings converts *compute.EncryptionSettings from version 2017-03-30 to 2018-04-01
 func ConvertEncryptionSettings(azs *azscompute.EncryptionSettings) *compute.EncryptionSettings {
 
 	if azs == nil {
 		return nil
 	}
-	//TODO
-	return &compute.EncryptionSettings{}
+	return &compute.EncryptionSettings{
+		Enabled:           azs.Enabled,
+		DiskEncryptionKey: ConvertKeyVaultAndSecretReference(azs.DiskEncryptionKey),
+		KeyEncryptionKey:  ConvertKeyVaultAndKeyReference(azs.KeyEncryptionKey),
+	}
 }
 
 // ConvertDisk converts *compute.Disk from version 2017-03-30 to 2018-04-01
@@ -995,4 +1055,15 @@ func ConvertDiskSlice(azs *[]azscompute.Disk) *[]compute.Disk {
 		snpn = append(snpn, *ConvertDisk(&vsnpn))
 	}
 	return &snpn
+}
+
+// ConvertDiskSliceValue converts []compute.NetworkProfile from version 2017-03-30 to 2018-04-01
+func ConvertDiskSliceValue(azs []azscompute.Disk) []compute.Disk {
+
+	snpn := []compute.Disk{}
+	for _, vsnpn := range azs {
+
+		snpn = append(snpn, *ConvertDisk(&vsnpn))
+	}
+	return snpn
 }

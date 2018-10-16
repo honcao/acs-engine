@@ -15,12 +15,12 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2017-03-01/apimanagement"
 	"github.com/Azure/azure-sdk-for-go/services/authorization/mgmt/2015-07-01/authorization"
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2017-03-30/compute"
 	"github.com/Azure/azure-sdk-for-go/services/graphrbac/1.6/graphrbac"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-08-01/network"
 	"github.com/Azure/azure-sdk-for-go/services/preview/msi/mgmt/2015-08-31-preview/msi"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-05-01/resources"
-	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2018-02-01/storage"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources"
+	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2016-01-01/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -30,6 +30,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/Azure/acs-engine/pkg/acsengine"
+	"github.com/Azure/acs-engine/pkg/armhelpers"
 )
 
 const (
@@ -110,7 +111,7 @@ func NewAzureClientWithDeviceAuth(env azure.Environment, subscriptionID string) 
 	}
 
 	client := &autorest.Client{
-		PollingDuration: DefaultARMOperationTimeout,
+		PollingDuration: armhelpers.DefaultARMOperationTimeout,
 	}
 
 	deviceCode, err := adal.InitiateDeviceAuth(client, *oauthConfig, acsEngineClientID, env.ServiceManagementEndpoint)
@@ -343,19 +344,19 @@ func getClient(env azure.Environment, subscriptionID, tenantID string, armSpt *a
 	c.resourcesClient.PollingDelay = time.Second * 5
 
 	// Set permissive timeouts to accommodate long-running operations
-	c.deploymentsClient.PollingDuration = DefaultARMOperationTimeout
-	c.deploymentOperationsClient.PollingDuration = DefaultARMOperationTimeout
-	c.applicationsClient.PollingDuration = DefaultARMOperationTimeout
-	c.authorizationClient.PollingDuration = DefaultARMOperationTimeout
-	c.disksClient.PollingDuration = DefaultARMOperationTimeout
-	c.groupsClient.PollingDuration = DefaultARMOperationTimeout
-	c.interfacesClient.PollingDuration = DefaultARMOperationTimeout
-	c.providersClient.PollingDuration = DefaultARMOperationTimeout
-	c.resourcesClient.PollingDuration = DefaultARMOperationTimeout
-	c.storageAccountsClient.PollingDuration = DefaultARMOperationTimeout
-	c.virtualMachineScaleSetsClient.PollingDuration = DefaultARMOperationTimeout
-	c.virtualMachineScaleSetVMsClient.PollingDuration = DefaultARMOperationTimeout
-	c.virtualMachinesClient.PollingDuration = DefaultARMOperationTimeout
+	c.deploymentsClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.deploymentOperationsClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.applicationsClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.authorizationClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.disksClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.groupsClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.interfacesClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.providersClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.resourcesClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.storageAccountsClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.virtualMachineScaleSetsClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.virtualMachineScaleSetVMsClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
+	c.virtualMachinesClient.PollingDuration = armhelpers.DefaultARMOperationTimeout
 
 	graphAuthorizer := autorest.NewBearerAuthorizer(graphSpt)
 	c.applicationsClient.Authorizer = graphAuthorizer
@@ -366,7 +367,7 @@ func getClient(env azure.Environment, subscriptionID, tenantID string, armSpt *a
 
 // EnsureProvidersRegistered checks if the AzureClient is registered to required resource providers and, if not, register subscription to providers
 func (az *AzureClient) EnsureProvidersRegistered(subscriptionID string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultARMOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), armhelpers.DefaultARMOperationTimeout)
 	defer cancel()
 	registeredProviders, err := az.providersClient.List(ctx, to.Int32Ptr(100), "")
 	if err != nil {

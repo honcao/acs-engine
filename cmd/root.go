@@ -5,10 +5,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Azure/acs-engine/pkg/api"
 	"github.com/Azure/acs-engine/pkg/api/vlabs"
 	"github.com/Azure/acs-engine/pkg/armhelpers"
+	"github.com/Azure/acs-engine/pkg/armhelpers/azurestack"
 	"github.com/Azure/acs-engine/pkg/helpers"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/pkg/errors"
@@ -20,9 +22,10 @@ import (
 )
 
 const (
-	rootName             = "acs-engine"
-	rootShortDescription = "ACS-Engine deploys and manages container orchestrators in Azure"
-	rootLongDescription  = "ACS-Engine deploys and manages Kubernetes, OpenShift, Swarm Mode, and DC/OS clusters in Azure"
+	rootName                  = "acs-engine"
+	rootShortDescription      = "ACS-Engine deploys and manages container orchestrators in Azure"
+	rootLongDescription       = "ACS-Engine deploys and manages Kubernetes, OpenShift, Swarm Mode, and DC/OS clusters in Azure"
+	azureStackEnvironmentName = "AzureStackClould"
 )
 
 var (
@@ -191,6 +194,13 @@ func getCloudSubFromAzConfig(cloud string, f *ini.File) (uuid.UUID, error) {
 }
 
 func (authArgs *authArgs) getClient() (armhelpers.ACSEngineClient, error) {
+	if strings.EqualFold(authArgs.RawAzureEnvironment, azureStackEnvironmentName) {
+		return authArgs.getazsClient()
+	}
+	return authArgs.getazClient()
+}
+
+func (authArgs *authArgs) getazClient() (armhelpers.ACSEngineClient, error) {
 	var client *armhelpers.AzureClient
 	env, err := azure.EnvironmentFromName(authArgs.RawAzureEnvironment)
 	if err != nil {
@@ -203,6 +213,33 @@ func (authArgs *authArgs) getClient() (armhelpers.ACSEngineClient, error) {
 		client, err = armhelpers.NewAzureClientWithClientSecret(env, authArgs.SubscriptionID.String(), authArgs.ClientID.String(), authArgs.ClientSecret)
 	case "client_certificate":
 		client, err = armhelpers.NewAzureClientWithClientCertificateFile(env, authArgs.SubscriptionID.String(), authArgs.ClientID.String(), authArgs.CertificatePath, authArgs.PrivateKeyPath)
+	default:
+		return nil, errors.Errorf("--auth-method: ERROR: method unsupported. method=%q", authArgs.AuthMethod)
+	}
+	if err != nil {
+		return nil, err
+	}
+	err = client.EnsureProvidersRegistered(authArgs.SubscriptionID.String())
+	if err != nil {
+		return nil, err
+	}
+	client.AddAcceptLanguages([]string{authArgs.language})
+	return client, nil
+}
+
+func (authArgs *authArgs) getazsClient() (armhelpers.ACSEngineClient, error) {
+	var client *azurestack.AzureClient
+	env, err := azure.EnvironmentFromName(authArgs.RawAzureEnvironment)
+	if err != nil {
+		return nil, err
+	}
+	switch authArgs.AuthMethod {
+	case "device":
+		client, err = azurestack.NewAzureClientWithDeviceAuth(env, authArgs.SubscriptionID.String())
+	case "client_secret":
+		client, err = azurestack.NewAzureClientWithClientSecret(env, authArgs.SubscriptionID.String(), authArgs.ClientID.String(), authArgs.ClientSecret)
+	case "client_certificate":
+		client, err = azurestack.NewAzureClientWithClientCertificateFile(env, authArgs.SubscriptionID.String(), authArgs.ClientID.String(), authArgs.CertificatePath, authArgs.PrivateKeyPath)
 	default:
 		return nil, errors.Errorf("--auth-method: ERROR: method unsupported. method=%q", authArgs.AuthMethod)
 	}

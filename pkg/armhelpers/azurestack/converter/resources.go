@@ -29,33 +29,8 @@ func ConvertDeploymentExtended(azsde azsresources.DeploymentExtended) resources.
 			p.ID = v.ID
 			p.Namespace = v.Namespace
 			p.RegistrationState = v.RegistrationState
+			p.ResourceTypes = ConvertProviderResourceTypeSlice(v.ResourceTypes)
 
-			sprt := []resources.ProviderResourceType{}
-			for _, vprt := range *v.ResourceTypes {
-				prt := resources.ProviderResourceType{}
-				prt.Locations = vprt.Locations
-				prt.APIVersions = vprt.APIVersions
-				prt.Properties = vprt.Properties
-
-				sat := []resources.AliasType{}
-				for _, vat := range *vprt.Aliases {
-					at := resources.AliasType{}
-					at.Name = vat.Name
-
-					satp := []resources.AliasPathType{}
-					for _, vatp := range *vat.Paths {
-						atp := resources.AliasPathType{}
-						atp.Path = vatp.Path
-						atp.APIVersions = vatp.APIVersions
-						satp = append(satp, atp)
-					}
-					at.Paths = &satp
-					sat = append(sat, at)
-				}
-				prt.Aliases = &sat
-				sprt = append(sprt, prt)
-			}
-			p.ResourceTypes = &sprt
 			sp = append(sp, p)
 		}
 
@@ -140,19 +115,108 @@ func ConvertGroup(azsg azsresources.Group) resources.Group {
 
 // ConvertProvider converts resources.ProviderListResult from version 2018-05-01 to 2018-02-01
 func ConvertProvider(azs *azsresources.Provider) *resources.Provider {
-	p := resources.Provider{}
-	// TODO
+
+	if azs == nil {
+		return nil
+	}
+
+	p := resources.Provider{
+		Response:      azs.Response,
+		ID:            azs.ID,
+		Namespace:     azs.Namespace,
+		ResourceTypes: ConvertProviderResourceTypeSlice(azs.ResourceTypes),
+	}
 	return &p
 }
 
-// ConvertProviderSlice converts *[]resources.ProviderListResult from version 2018-05-01 to 2018-02-01
+// ConvertProviderResourceType converts resources.ProviderListResult from version 2018-05-01 to 2018-02-01
+func ConvertProviderResourceType(azs *azsresources.ProviderResourceType) *resources.ProviderResourceType {
+	if azs == nil {
+		return nil
+	}
+
+	p := resources.ProviderResourceType{
+		ResourceType: azs.ResourceType,
+		Locations:    azs.Locations,
+		Aliases:      ConvertAliasTypeSlice(azs.Aliases),
+		APIVersions:  azs.APIVersions,
+		Properties:   azs.Properties,
+	}
+	return &p
+}
+
+// ConvertAliasType converts resources.AliasType from version 2018-05-01 to 2018-02-01
+func ConvertAliasType(azs *azsresources.AliasType) *resources.AliasType {
+	if azs == nil {
+		return nil
+	}
+
+	at := resources.AliasType{}
+	at.Name = azs.Name
+
+	satp := []resources.AliasPathType{}
+	for _, vatp := range *azs.Paths {
+		atp := resources.AliasPathType{}
+		atp.Path = vatp.Path
+		atp.APIVersions = vatp.APIVersions
+		satp = append(satp, atp)
+	}
+	at.Paths = &satp
+	return &at
+
+}
+
+// ConvertAliasTypeSlice converts *[]resources.AliasType from version 2018-05-01 to 2018-02-01
+func ConvertAliasTypeSlice(azs *[]azsresources.AliasType) *[]resources.AliasType {
+	if azs == nil {
+		return nil
+	}
+
+	sp := []resources.AliasType{}
+	for _, vsp := range *azs {
+		sp = append(sp, *ConvertAliasType(&vsp))
+	}
+
+	return &sp
+}
+
+// ConvertProviderResourceTypeSlice converts *[]resources.ProviderLiProviderResourceTypestResult from version 2018-05-01 to 2018-02-01
+func ConvertProviderResourceTypeSlice(azs *[]azsresources.ProviderResourceType) *[]resources.ProviderResourceType {
+	if azs == nil {
+		return nil
+	}
+
+	sp := []resources.ProviderResourceType{}
+	for _, vsp := range *azs {
+		sp = append(sp, *ConvertProviderResourceType(&vsp))
+	}
+
+	return &sp
+}
+
+// ConvertProviderSlice converts *[]resources.Provider from version 2018-05-01 to 2018-02-01
 func ConvertProviderSlice(azs *[]azsresources.Provider) *[]resources.Provider {
+	if azs == nil {
+		return nil
+	}
+
 	sp := []resources.Provider{}
 	for _, vsp := range *azs {
 		sp = append(sp, *ConvertProvider(&vsp))
 	}
 
 	return &sp
+}
+
+// ConvertProviderSliceValue converts []resources.Provider from version 2018-05-01 to 2018-02-01
+func ConvertProviderSliceValue(azs []azsresources.Provider) []resources.Provider {
+
+	sp := []resources.Provider{}
+	for _, vsp := range azs {
+		sp = append(sp, *ConvertProvider(&vsp))
+	}
+
+	return sp
 }
 
 // ConvertProviderListResult converts resources.ProviderListResult from version 2018-05-01 to 2018-02-01
@@ -164,4 +228,102 @@ func ConvertProviderListResult(azs azsresources.ProviderListResult) resources.Pr
 	}
 
 	return g
+}
+
+// ConvertDeploymentOperationsListResult converts resources.DeploymentOperationsListResult from version 2018-05-01 to 2018-02-01
+func ConvertDeploymentOperationsListResult(azs azsresources.DeploymentOperationsListResult) resources.DeploymentOperationsListResult {
+	g := resources.DeploymentOperationsListResult{
+		Response: azs.Response,
+		Value:    ConvertDeploymentOperationSlice(azs.Value),
+		NextLink: azs.NextLink,
+	}
+
+	return g
+}
+
+// ConvertDeploymentOperationSlice converts *[]resources.DeploymentOperation from version 2018-05-01 to 2018-02-01
+func ConvertDeploymentOperationSlice(azs *[]azsresources.DeploymentOperation) *[]resources.DeploymentOperation {
+	if azs == nil {
+		return nil
+	}
+
+	sp := []resources.DeploymentOperation{}
+	for _, vsp := range *azs {
+		sp = append(sp, *ConvertDeploymentOperation(&vsp))
+	}
+
+	return &sp
+}
+
+// ConvertDeploymentOperationSliceValue converts []resources.DeploymentOperation from version 2018-05-01 to 2018-02-01
+func ConvertDeploymentOperationSliceValue(azs []azsresources.DeploymentOperation) []resources.DeploymentOperation {
+	sp := []resources.DeploymentOperation{}
+	for _, vsp := range azs {
+		sp = append(sp, *ConvertDeploymentOperation(&vsp))
+	}
+
+	return sp
+}
+
+// ConvertDeploymentOperation converts resources.ProviderListResult from version 2018-05-01 to 2018-02-01
+func ConvertDeploymentOperation(azs *azsresources.DeploymentOperation) *resources.DeploymentOperation {
+
+	if azs == nil {
+		return nil
+	}
+
+	p := resources.DeploymentOperation{
+		Response:    azs.Response,
+		ID:          azs.ID,
+		OperationID: azs.OperationID,
+		Properties:  ConvertDeploymentOperationProperties(azs.Properties),
+	}
+	return &p
+}
+
+// ConvertDeploymentOperationProperties converts resources.DeploymentOperationProperties from version 2018-05-01 to 2018-02-01
+func ConvertDeploymentOperationProperties(azs *azsresources.DeploymentOperationProperties) *resources.DeploymentOperationProperties {
+
+	if azs == nil {
+		return nil
+	}
+
+	p := resources.DeploymentOperationProperties{
+		ProvisioningState: azs.ProvisioningState,
+		Timestamp:         azs.Timestamp,
+		ServiceRequestID:  azs.ServiceRequestID,
+		StatusCode:        azs.StatusCode,
+		TargetResource:    ConvertTargetResource(azs.TargetResource),
+		Request:           ConvertHTTPMessage(azs.Request),
+		Response:          ConvertHTTPMessage(azs.Response),
+	}
+	return &p
+}
+
+// ConvertTargetResource converts resources.TargetResource from version 2018-05-01 to 2018-02-01
+func ConvertTargetResource(azs *azsresources.TargetResource) *resources.TargetResource {
+
+	if azs == nil {
+		return nil
+	}
+
+	p := resources.TargetResource{
+		ID:           azs.ID,
+		ResourceName: azs.ResourceName,
+		ResourceType: azs.ResourceType,
+	}
+	return &p
+}
+
+// ConvertHTTPMessage converts resources.HTTPMessage from version 2018-05-01 to 2018-02-01
+func ConvertHTTPMessage(azs *azsresources.HTTPMessage) *resources.HTTPMessage {
+
+	if azs == nil {
+		return nil
+	}
+
+	p := resources.HTTPMessage{
+		Content: azs.Content,
+	}
+	return &p
 }
