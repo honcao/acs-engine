@@ -13,7 +13,7 @@ func getParameters(cs *api.ContainerService, generatorCode string, acsengineVers
 	properties := cs.Properties
 	location := cs.Location
 	parametersMap := paramsMap{}
-	cloudSpecConfig := getCloudSpecConfig(location)
+	cloudSpecConfig := getCloudSpecConfig(location, cs.Properties)
 
 	// acsengine Parameters
 	addValue(parametersMap, "acsengineVersion", acsengineVersion)
@@ -36,7 +36,7 @@ func getParameters(cs *api.ContainerService, generatorCode string, acsengineVers
 	// for the openshift orchestrator
 
 	addValue(parametersMap, "fqdnEndpointSuffix", cloudSpecConfig.EndpointConfig.ResourceManagerVMDNSSuffix)
-	addValue(parametersMap, "targetEnvironment", getCloudTargetEnv(location))
+	addValue(parametersMap, "targetEnvironment", getCloudTargetEnv(location, getCloudProfileName(properties)))
 	addValue(parametersMap, "linuxAdminUsername", properties.LinuxProfile.AdminUsername)
 	if properties.LinuxProfile.CustomSearchDomain != nil {
 		addValue(parametersMap, "searchDomainName", properties.LinuxProfile.CustomSearchDomain.Name)
@@ -76,6 +76,29 @@ func getParameters(cs *api.ContainerService, generatorCode string, acsengineVers
 	if properties.HostedMasterProfile != nil {
 		addValue(parametersMap, "masterSubnet", properties.HostedMasterProfile.Subnet)
 	}
+
+	if properties.CloudProfile != nil {
+		addValue(parametersMap, "cloudprofileName", properties.CloudProfile.Name)
+		addValue(parametersMap, "cloudprofileManagementPortalURL", properties.CloudProfile.ManagementPortalURL)
+		addValue(parametersMap, "cloudprofilePublishSettingsURL", properties.CloudProfile.PublishSettingsURL)
+		addValue(parametersMap, "cloudprofileServiceManagementEndpoint", properties.CloudProfile.ServiceManagementEndpoint)
+		addValue(parametersMap, "cloudprofileResourceManagerEndpoint", properties.CloudProfile.ResourceManagerEndpoint)
+		addValue(parametersMap, "cloudprofileActiveDirectoryEndpoint", properties.CloudProfile.ActiveDirectoryEndpoint)
+		addValue(parametersMap, "cloudprofileGalleryEndpoint", properties.CloudProfile.GalleryEndpoint)
+		addValue(parametersMap, "cloudprofileKeyVaultEndpoint", properties.CloudProfile.KeyVaultEndpoint)
+		addValue(parametersMap, "cloudprofileGraphEndpoint", properties.CloudProfile.GraphEndpoint)
+		addValue(parametersMap, "cloudprofileStorageEndpointSuffix", properties.CloudProfile.StorageEndpointSuffix)
+		addValue(parametersMap, "cloudprofileSQLDatabaseDNSSuffix", properties.CloudProfile.SQLDatabaseDNSSuffix)
+		addValue(parametersMap, "cloudprofileTrafficManagerDNSSuffix", properties.CloudProfile.TrafficManagerDNSSuffix)
+		addValue(parametersMap, "cloudprofileKeyVaultDNSSuffix", properties.CloudProfile.KeyVaultDNSSuffix)
+		addValue(parametersMap, "cloudprofileServiceBusEndpointSuffix", properties.CloudProfile.ServiceBusEndpointSuffix)
+		addValue(parametersMap, "cloudprofileServiceManagementVMDNSSuffix", properties.CloudProfile.ServiceManagementVMDNSSuffix)
+		addValue(parametersMap, "cloudprofileResourceManagerVMDNSSuffix", properties.CloudProfile.ResourceManagerVMDNSSuffix)
+		addValue(parametersMap, "cloudprofileContainerRegistryDNSSuffix", properties.CloudProfile.ContainerRegistryDNSSuffix)
+		addValue(parametersMap, "cloudprofileResourceManagerRootCertificate", properties.CloudProfile.ResourceManagerRootCertificate)
+		addValue(parametersMap, "cloudprofileLocation", properties.CloudProfile.Location)
+	}
+
 	addValue(parametersMap, "sshRSAPublicKey", properties.LinuxProfile.SSH.PublicKeys[0].KeyData)
 	for i, s := range properties.LinuxProfile.Secrets {
 		addValue(parametersMap, fmt.Sprintf("linuxKeyVaultID%d", i), s.SourceVault.ID)

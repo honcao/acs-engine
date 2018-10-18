@@ -45,6 +45,32 @@ write_files:
     MountFlags=shared
     {{end}}
 
+{{if IsAzureStackCloud}}
+- path: "/etc/kubernetes/azurestackcloud.json"
+  permissions: "0644"
+  owner: "root"
+  content: |
+   {
+      "name": "{{WrapAsVariable "cloudprofileName"}}",
+      "managementPortalURL": "{{WrapAsVariable "cloudprofileManagementPortalURL"}}",
+      "publishSettingsURL": "{{WrapAsVariable "cloudprofilePublishSettingsURL"}}",
+      "serviceManagementEndpoint": "{{WrapAsVariable "cloudprofileServiceManagementEndpoint"}}",
+      "resourceManagerEndpoint": "{{WrapAsVariable "cloudprofileResourceManagerEndpoint"}}",
+      "activeDirectoryEndpoint": "{{WrapAsVariable "cloudprofileActiveDirectoryEndpoint"}}",
+      "galleryEndpoint": "{{WrapAsVariable "cloudprofileGalleryEndpoint"}}",
+      "keyVaultEndpoint": "{{WrapAsVariable "cloudprofileKeyVaultEndpoint"}}",
+      "graphEndpoint": "{{WrapAsVariable "cloudprofileGraphEndpoint"}}",
+      "storageEndpointSuffix": "{{WrapAsVariable "cloudprofileStorageEndpointSuffix"}}",
+      "sQLDatabaseDNSSuffix": "{{WrapAsVariable "cloudprofileSQLDatabaseDNSSuffix"}}",
+      "trafficManagerDNSSuffix": "{{WrapAsVariable "cloudprofileTrafficManagerDNSSuffix"}}",
+      "keyVaultDNSSuffix": "{{WrapAsVariable "cloudprofileKeyVaultDNSSuffix"}}",
+      "serviceBusEndpointSuffix": "{{WrapAsVariable "cloudprofileServiceBusEndpointSuffix"}}",
+      "serviceManagementVMDNSSuffix": "{{WrapAsVariable "cloudprofileServiceManagementVMDNSSuffix"}}",
+      "resourceManagerVMDNSSuffix": "{{WrapAsVariable "cloudprofileResourceManagerVMDNSSuffix"}}",
+      "containerRegistryDNSSuffix": "{{WrapAsVariable "cloudprofileContainerRegistryDNSSuffix"}}"
+   }
+{{end}}
+
 - path: "/etc/systemd/system/docker.service.d/exec_start.conf"
   permissions: "0644"
   owner: "root"
@@ -369,7 +395,16 @@ MASTER_ARTIFACTS_CONFIG_PLACEHOLDER
     sed -i "s|<kubernetesControllerManagerConfig>|{{GetK8sRuntimeConfigKeyVals .OrchestratorProfile.KubernetesConfig.ControllerManagerConfig}}|g" "/etc/kubernetes/manifests/kube-controller-manager.yaml"
     sed -i "s|<kubernetesAPIServerConfig>|{{GetK8sRuntimeConfigKeyVals .OrchestratorProfile.KubernetesConfig.APIServerConfig}}|g" "/etc/kubernetes/manifests/kube-apiserver.yaml"
     sed -i "s|<kubernetesSchedulerConfig>|{{GetK8sRuntimeConfigKeyVals .OrchestratorProfile.KubernetesConfig.SchedulerConfig}}|g" "/etc/kubernetes/manifests/kube-scheduler.yaml"
+{{if IsMultipleMasters}}
+{{if IsAzureStackCloud}}   
+    masterLBIP=`getent hosts  {{WrapAsVariable "masterPublicLbFQDN"}} |  cut -d " " -f1`
+    sed -i "s|<kubernetesAPIServerIP>|$masterLBIP|g" "/etc/kubernetes/manifests/kube-apiserver.yaml"
+{{else}}
     sed -i "s|<kubernetesAPIServerIP>|{{WrapAsVariable "kubernetesAPIServerIP"}}|g" "/etc/kubernetes/manifests/kube-apiserver.yaml"
+{{end}}
+{{else}}
+    sed -i "s|<kubernetesAPIServerIP>|{{WrapAsVariable "kubernetesAPIServerIP"}}|g" "/etc/kubernetes/manifests/kube-apiserver.yaml"
+{{end}}
 {{if not EnablePodSecurityPolicy}}
     sed -i "s|apparmor_parser|d|g" "/etc/systemd/system/kubelet.service"
 {{end}}

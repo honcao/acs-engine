@@ -72,7 +72,15 @@
         "dnsSettings": {
           "domainNameLabel": "[variables('masterEndpointDNSNamePrefix')]"
         },
+        {{if IsMultipleMasters}}
+        {{if IsAzureStackCloud}}
+        "publicIPAllocationMethod": "Static"
+        {{else}}
         "publicIPAllocationMethod": "Dynamic"
+        {{end}}
+        {{else}}
+        "publicIPAllocationMethod": "Dynamic"
+        {{end}}
       },
       "type": "Microsoft.Network/publicIPAddresses"
     },

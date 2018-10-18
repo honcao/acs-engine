@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -146,7 +148,7 @@ func (authArgs *authArgs) validateAuthArgs() error {
 		log.Infoln("No subscription provided, using selected subscription from azure CLI:", subID.String())
 		authArgs.SubscriptionID = subID
 	}
-
+	log.Infoln(fmt.Sprintf("AzureEnvironment: %s", authArgs.RawAzureEnvironment))
 	_, err := azure.EnvironmentFromName(authArgs.RawAzureEnvironment)
 	if err != nil {
 		return errors.New("failed to parse --azure-env as a valid target Azure cloud environment")
@@ -208,6 +210,9 @@ func (authArgs *authArgs) getazClient() (armhelpers.ACSEngineClient, error) {
 	}
 	switch authArgs.AuthMethod {
 	case "device":
+		if strings.EqualFold(authArgs.RawAzureEnvironment, "AzureStackCloud") {
+			log.Fatal("--auth-method is not a valid auth method for AzureStackCloud.")
+		}
 		client, err = armhelpers.NewAzureClientWithDeviceAuth(env, authArgs.SubscriptionID.String())
 	case "client_secret":
 		client, err = armhelpers.NewAzureClientWithClientSecret(env, authArgs.SubscriptionID.String(), authArgs.ClientID.String(), authArgs.ClientSecret)
@@ -252,6 +257,45 @@ func (authArgs *authArgs) getazsClient() (armhelpers.ACSEngineClient, error) {
 	}
 	client.AddAcceptLanguages([]string{authArgs.language})
 	return client, nil
+}
+
+func writeCloudProfile(cs *api.ContainerService) error {
+
+	file, err := ioutil.TempFile("", "azurestackcloud.json")
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Infoln(fmt.Sprintf("Writing cloud profile to: %s", file.Name()))
+
+	// Build content for the file
+	content := `{
+	"name": "` + cs.Properties.CloudProfile.Name + `",
+	"managementPortalURL": "` + cs.Properties.CloudProfile.ManagementPortalURL + `",
+	"publishSettingsURL": "` + cs.Properties.CloudProfile.PublishSettingsURL + `",
+	"serviceManagementEndpoint": "` + cs.Properties.CloudProfile.ServiceManagementEndpoint + `",
+	"resourceManagerEndpoint": "` + cs.Properties.CloudProfile.ResourceManagerEndpoint + `",
+	"activeDirectoryEndpoint": "` + cs.Properties.CloudProfile.ActiveDirectoryEndpoint + `",
+	"galleryEndpoint": "` + cs.Properties.CloudProfile.GalleryEndpoint + `",
+	"keyVaultEndpoint": "` + cs.Properties.CloudProfile.KeyVaultEndpoint + `",
+	"graphEndpoint": "` + cs.Properties.CloudProfile.GraphEndpoint + `",
+	"storageEndpointSuffix": "` + cs.Properties.CloudProfile.StorageEndpointSuffix + `",
+	"sQLDatabaseDNSSuffix": "` + cs.Properties.CloudProfile.SQLDatabaseDNSSuffix + `",
+	"trafficManagerDNSSuffix": "` + cs.Properties.CloudProfile.TrafficManagerDNSSuffix + `",
+	"keyVaultDNSSuffix": "` + cs.Properties.CloudProfile.KeyVaultDNSSuffix + `",
+	"serviceBusEndpointSuffix": "` + cs.Properties.CloudProfile.ServiceBusEndpointSuffix + `",
+	"serviceManagementVMDNSSuffix": "` + cs.Properties.CloudProfile.ServiceManagementVMDNSSuffix + `",
+	"resourceManagerVMDNSSuffix": "` + cs.Properties.CloudProfile.ResourceManagerVMDNSSuffix + `",
+	"containerRegistryDNSSuffix": "` + cs.Properties.CloudProfile.ContainerRegistryDNSSuffix + `"
+    }`
+
+	if _, err = file.Write([]byte(content)); err != nil {
+		fmt.Printf("Error [Write %s] : %v\n", file.Name(), err)
+	}
+
+	os.Setenv("AZURE_ENVIRONMENT_FILEPATH", file.Name())
+
+	return nil
 }
 
 func getCompletionCmd(root *cobra.Command) *cobra.Command {

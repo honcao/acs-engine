@@ -1,6 +1,10 @@
 {{if HasWindowsCustomImage}}
     {"type": "Microsoft.Compute/images",
+      {{if IsAzureStackCloud}}
+      "apiVersion": "2017-03-30",
+      {{else}}
       "apiVersion": "2017-12-01",
+      {{end}}
       "name": "{{.Name}}CustomWindowsImage",
       "location": "[variables('location')]",
       "properties": {
@@ -54,8 +58,10 @@
           {{end}}
         ]
 {{if not IsAzureCNI}}
+	{{if not IsAzureStackCloud}}
         ,
         "enableIPForwarding": true
+	{{end}}
 {{end}}
       },
       "type": "Microsoft.Network/networkInterfaces"
@@ -67,11 +73,18 @@
       "apiVersion": "[variables('apiVersionStorageManagedDisks')]",
       "properties":
         {
+            {{if not IsAzureStackCloud}}
+            "managed" : "true",
+            {{end}}
             "platformFaultDomainCount": 2,
-            "platformUpdateDomainCount": 3,
-		        "managed" : "true"
+            "platformUpdateDomainCount": 3
         },
-
+      {{if IsAzureStackCloud}}
+      "sku":
+        {
+            "name": "Aligned"
+        },
+      {{end}}
       "type": "Microsoft.Compute/availabilitySets"
     },
 {{else if .IsStorageAccount}}

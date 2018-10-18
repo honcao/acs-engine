@@ -76,9 +76,11 @@ func GenerateKubeConfig(properties *api.Properties, location string) (string, er
 			kubeconfig = strings.Replace(kubeconfig, "{{WrapAsVerbatim \"reference(concat('Microsoft.Network/publicIPAddresses/', variables('masterPublicIPAddressName'))).dnsSettings.fqdn\"}}", properties.MasterProfile.FirstConsecutiveStaticIP, -1)
 		}
 	} else {
-		kubeconfig = strings.Replace(kubeconfig, "{{WrapAsVerbatim \"reference(concat('Microsoft.Network/publicIPAddresses/', variables('masterPublicIPAddressName'))).dnsSettings.fqdn\"}}", FormatAzureProdFQDN(properties.MasterProfile.DNSPrefix, location), -1)
+		kubeconfig = strings.Replace(kubeconfig, "{{WrapAsVerbatim \"reference(concat('Microsoft.Network/publicIPAddresses/', variables('masterPublicIPAddressName'))).dnsSettings.fqdn\"}}", FormatAzureProdFQDN(properties.MasterProfile.DNSPrefix, location, properties), -1)
 	}
 	kubeconfig = strings.Replace(kubeconfig, "{{WrapAsVariable \"resourceGroup\"}}", properties.MasterProfile.DNSPrefix, -1)
+
+	var cloudProfileName string = getCloudProfileName(properties)
 
 	var authInfo string
 	if properties.AADProfile == nil {
@@ -92,7 +94,7 @@ func GenerateKubeConfig(properties *api.Properties, location string) (string, er
 		}
 
 		authInfo = fmt.Sprintf("{\"auth-provider\":{\"name\":\"azure\",\"config\":{\"environment\":\"%v\",\"tenant-id\":\"%v\",\"apiserver-id\":\"%v\",\"client-id\":\"%v\"}}}",
-			getCloudTargetEnv(location),
+			getCloudTargetEnv(location, cloudProfileName),
 			tenantID,
 			properties.AADProfile.ServerAppID,
 			properties.AADProfile.ClientAppID)
@@ -103,41 +105,62 @@ func GenerateKubeConfig(properties *api.Properties, location string) (string, er
 }
 
 // formatAzureProdFQDNs constructs all possible Azure prod fqdn
-func formatAzureProdFQDNs(fqdnPrefix string) []string {
+func formatAzureProdFQDNs(fqdnPrefix string, properties *api.Properties) []string {
 	var fqdns []string
 	for _, location := range AzureLocations {
-		fqdns = append(fqdns, FormatAzureProdFQDN(fqdnPrefix, location))
+		fqdns = append(fqdns, FormatAzureProdFQDN(fqdnPrefix, location, properties))
 	}
+
+	// We need an additional customer provided location for hybrid cloud solution (AzureStack).
+	cloudProfileName := getCloudProfileName(properties)
+	if cloudProfileName != "" && strings.EqualFold(cloudProfileName, azureStackCloud) {
+		if properties.CloudProfile.Location == "" {
+			log.Fatalf("CloudProfile type %s has empty location specified '%s'", cloudProfileName, properties.CloudProfile.Location)
+		}
+		fqdns = append(fqdns, FormatAzureProdFQDN(fqdnPrefix, properties.CloudProfile.Location, properties))
+	}
+
 	return fqdns
 }
 
 // FormatAzureProdFQDN constructs an Azure prod fqdn
-func FormatAzureProdFQDN(fqdnPrefix string, location string) string {
+func FormatAzureProdFQDN(fqdnPrefix string, location string, properties *api.Properties) string {
 	var FQDNFormat string
-	switch getCloudTargetEnv(location) {
+	cloudProfileName := getCloudProfileName(properties)
+	switch getCloudTargetEnv(location, cloudProfileName) {
 	case azureChinaCloud:
 		FQDNFormat = AzureChinaCloudSpec.EndpointConfig.ResourceManagerVMDNSSuffix
 	case azureGermanCloud:
 		FQDNFormat = AzureGermanCloudSpec.EndpointConfig.ResourceManagerVMDNSSuffix
 	case azureUSGovernmentCloud:
 		FQDNFormat = AzureUSGovernmentCloud.EndpointConfig.ResourceManagerVMDNSSuffix
+	case azureStackCloud:
+		var cloudprofileResourceManagerVMDNSSuffix = properties.CloudProfile.ResourceManagerVMDNSSuffix
+		if cloudprofileResourceManagerVMDNSSuffix == "" {
+			log.Fatalf("CloudProfile type %s has empty resourceManagerVMDNSSuffix specified '%s'", cloudProfileName, cloudprofileResourceManagerVMDNSSuffix)
+		} else {
+			FQDNFormat = cloudprofileResourceManagerVMDNSSuffix
+		}
 	default:
 		FQDNFormat = AzureCloudSpec.EndpointConfig.ResourceManagerVMDNSSuffix
 	}
+
 	return fmt.Sprintf("%s.%s."+FQDNFormat, fqdnPrefix, location)
 }
 
 //getCloudSpecConfig returns the Kubernetes container images URL configurations based on the deploy target environment.
 //for example: if the target is the public azure, then the default container image url should be k8s.gcr.io/...
 //if the target is azure china, then the default container image should be mirror.azure.cn:5000/google_container/...
-func getCloudSpecConfig(location string) AzureEnvironmentSpecConfig {
-	switch getCloudTargetEnv(location) {
+func getCloudSpecConfig(location string, a *api.Properties) AzureEnvironmentSpecConfig {
+	switch getCloudTargetEnv(location, getCloudProfileName(a)) {
 	case azureChinaCloud:
 		return AzureChinaCloudSpec
 	case azureGermanCloud:
 		return AzureGermanCloudSpec
 	case azureUSGovernmentCloud:
 		return AzureUSGovernmentCloud
+	case azureStackCloud:
+		return AzureStackCloudSpec
 	default:
 		return AzureCloudSpec
 	}
@@ -165,7 +188,9 @@ func validateDistro(cs *api.ContainerService) bool {
 // getCloudTargetEnv determines and returns whether the region is a sovereign cloud which
 // have their own data compliance regulations (China/Germany/USGov) or standard
 //  Azure public cloud
-func getCloudTargetEnv(location string) string {
+
+func getCloudTargetEnv(location string, cloudProfileName string) string {
+
 	loc := strings.ToLower(strings.Join(strings.Fields(location), ""))
 	switch {
 	case loc == "chinaeast" || loc == "chinanorth" || loc == "chinaeast2" || loc == "chinanorth2":
@@ -174,6 +199,9 @@ func getCloudTargetEnv(location string) string {
 		return azureGermanCloud
 	case strings.HasPrefix(loc, "usgov") || strings.HasPrefix(loc, "usdod"):
 		return azureUSGovernmentCloud
+	case cloudProfileName != "" && strings.EqualFold(cloudProfileName, azureStackCloud):
+		// Azure Stack does not have well defined regions. The customer provide the region while deploying the stamp.
+		return azureStackCloud
 	default:
 		return azurePublicCloud
 	}

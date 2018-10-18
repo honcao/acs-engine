@@ -1,0 +1,64 @@
+{
+  "apiVersion": "vlabs",
+  "properties": {
+    "orchestratorProfile": {
+      "orchestratorType": "Kubernetes",
+      "orchestratorRelease": "1.9",
+      "kubernetesConfig": {
+        "kubernetesImageBase": "msazurestackdocker/", 
+        "useInstanceMetadata": false,
+        "networkPolicy": "none"
+      }
+
+    },
+       "cloudProfile": {
+        "name": "AzureStackCloud",
+        "managementPortalURL": "",
+        "publishSettingsURL": "",
+        "serviceManagementEndpoint": "",
+        "resourceManagerEndpoint": "",
+        "activeDirectoryEndpoint": "",
+        "galleryEndpoint": "",
+        "keyVaultEndpoint": "",
+        "graphEndpoint": "",
+        "storageEndpointSuffix": "",
+        "sqlDatabaseDNSSuffix": "",
+        "trafficManagerDNSSuffix": "",
+        "keyVaultDNSSuffix": "",
+        "serviceBusEndpointSuffix": "",
+        "serviceManagementVMDNSSuffix": "",
+        "resourceManagerVMDNSSuffix": "",
+        "containerRegistryDNSSuffix": "",
+        "resourceManagerRootCertificate": "",
+        "location": ""
+          },
+    "masterProfile": {
+      "count": 3,
+      "dnsPrefix": "",
+      "vmSize": "Standard_D2_v2"
+    },
+    "agentPoolProfiles": [
+      {
+        "name": "linuxpool2",
+        "count": 2,
+        "vmSize": "Standard_D1_v2",
+        "availabilityProfile": "AvailabilitySet",
+        "acceleratedNetworkingEnabled": false
+      }
+    ],
+    "linuxProfile": {
+      "adminUsername": "azureuser",
+      "ssh": {
+        "publicKeys": [
+          {
+            "keyData": ""
+          }
+        ]
+      }
+    },
+    "servicePrincipalProfile": {
+      "clientId": "",
+      "secret": ""
+    }
+  }
+}

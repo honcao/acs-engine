@@ -11,7 +11,11 @@
     },
 {{if HasWindowsCustomImage}}
     {"type": "Microsoft.Compute/images",
+      {{if IsAzureStackCloud}}
+      "apiVersion": "2017-03-30",
+      {{else}}
       "apiVersion": "2017-12-01",
+      {{end}}
       "name": "{{.Name}}CustomWindowsImage",
       "location": "[variables('location')]",
       "properties": {

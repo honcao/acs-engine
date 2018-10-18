@@ -42,6 +42,7 @@ type Properties struct {
 	CertificateProfile      *CertificateProfile      `json:"certificateProfile,omitempty"`
 	AADProfile              *AADProfile              `json:"aadProfile,omitempty"`
 	AzProfile               *AzProfile               `json:"azProfile,omitempty"`
+	CloudProfile            *CloudProfile            `json:"cloudProfile,omitempty"`
 }
 
 // AzProfile holds the azure context for where the cluster resides
@@ -397,6 +398,29 @@ type ImageReference struct {
 	ResourceGroup string `json:"resourceGroup,omitempty"`
 }
 
+// CloudProfile Represents Azure Enviornment
+type CloudProfile struct {
+	Name                           string `json:"name,omitempty"`
+	ManagementPortalURL            string `json:"managementPortalURL,omitempty"`
+	PublishSettingsURL             string `json:"publishSettingsURL,omitempty"`
+	ServiceManagementEndpoint      string `json:"serviceManagementEndpoint,omitempty"`
+	ResourceManagerEndpoint        string `json:"resourceManagerEndpoint,omitempty"`
+	ActiveDirectoryEndpoint        string `json:"activeDirectoryEndpoint,omitempty"`
+	GalleryEndpoint                string `json:"galleryEndpoint,omitempty"`
+	KeyVaultEndpoint               string `json:"keyVaultEndpoint,omitempty"`
+	GraphEndpoint                  string `json:"graphEndpoint,omitempty"`
+	StorageEndpointSuffix          string `json:"storageEndpointSuffix,omitempty"`
+	SQLDatabaseDNSSuffix           string `json:"sqlDatabaseDNSSuffix,omitempty"`
+	TrafficManagerDNSSuffix        string `json:"trafficManagerDNSSuffix,omitempty"`
+	KeyVaultDNSSuffix              string `json:"keyVaultDNSSuffix,omitempty"`
+	ServiceBusEndpointSuffix       string `json:"serviceBusEndpointSuffix,omitempty"`
+	ServiceManagementVMDNSSuffix   string `json:"serviceManagementVMDNSSuffix,omitempty"`
+	ResourceManagerVMDNSSuffix     string `json:"resourceManagerVMDNSSuffix,omitempty"`
+	ContainerRegistryDNSSuffix     string `json:"containerRegistryDNSSuffix,omitempty"`
+	ResourceManagerRootCertificate string `json:"resourceManagerRootCertificate,omitempty"`
+	Location                       string `json:"location,omitempty"`
+}
+
 // ExtensionProfile represents an extension definition
 type ExtensionProfile struct {
 	Name                           string             `json:"name"`
@@ -519,6 +543,14 @@ func (p *Properties) HasAvailabilityZones() bool {
 		}
 	}
 	return hasZones
+}
+
+// IsAzureStackCloud returns true if it's hybrid cloud solution of AzureStack
+func (c *CloudProfile) IsAzureStackCloud() bool {
+	if strings.EqualFold(c.Name, "AzureStackCloud") {
+		return true
+	}
+	return false
 }
 
 // IsCustomVNET returns true if the customer brought their own VNET

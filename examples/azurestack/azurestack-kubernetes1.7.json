@@ -1,0 +1,65 @@
+{
+  "apiVersion": "vlabs",
+  "properties": {
+    "orchestratorProfile": {
+      "orchestratorType": "Kubernetes",
+      "orchestratorRelease": "1.7",
+	    "kubernetesConfig": {
+        "CustomHyperkubeImage": "msazurestackdocker/k8s1.7:latest",
+        "useInstanceMetadata": false,
+        "networkPolicy": "none"
+      }
+    },
+	  "cloudProfile": {
+	      "name": "AzureStackCloud",
+        "managementPortalURL": "",
+        "publishSettingsURL": "",
+        "serviceManagementEndpoint": "https://management.azurestackci14.onmicrosoft.com/9290752b-dc4c-4d0b-baf3-3a053daf101b",
+        "resourceManagerEndpoint": "https://management.local.azurestack.external",
+        "activeDirectoryEndpoint": "https://login.windows.net/",
+        "galleryEndpoint": "https://portal.local.azurestack.external:30015/",
+        "keyVaultEndpoint": "",
+        "graphEndpoint": "https://graph.windows.net/",
+        "storageEndpointSuffix": "local.azurestack.external",
+        "sqlDatabaseDNSSuffix": "",
+        "trafficManagerDNSSuffix": "",
+        "keyVaultDNSSuffix": "vault.local.azurestack.external",
+        "serviceBusEndpointSuffix": "",
+        "serviceManagementVMDNSSuffix": "cloudapp.net",
+        "resourceManagerVMDNSSuffix": "cloudapp.azurestack.external",
+        "containerRegistryDNSSuffix": "",
+        "resourceManagerRootCertificate": "D17697CC206ED26E1A51F5BB96E9356D6D610B74",
+        "location": "local"
+	  },
+    "masterProfile": {
+      "count": 1,
+      "dnsPrefix": "k8s-11145",
+      "vmSize": "Standard_D1_v2",
+	    "StorageProfile" : "StorageAccount"
+    },
+    "agentPoolProfiles": [
+      {
+        "name": "agentpool1",
+        "count": 2,
+        "vmSize": "Standard_D1_v2",
+        "availabilityProfile": "AvailabilitySet",
+        "StorageProfile" : "StorageAccount",
+        "acceleratedNetworkingEnabled": false
+      }
+    ],
+    "linuxProfile": {
+      "adminUsername": "azureuser",
+      "ssh": {
+        "publicKeys": [
+          {
+            "keyData": ""
+          }
+        ]
+      }
+    },
+    "servicePrincipalProfile": {
+      "clientId":  "",
+      "secret":  ""
+    }
+  }
+}

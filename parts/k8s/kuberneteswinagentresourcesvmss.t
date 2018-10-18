@@ -75,7 +75,9 @@
                   {{end}}
                 ]
                 {{if not IsAzureCNI}}
+                {{if not IsAzureStackCloud}}
                 ,"enableIPForwarding": true
+                {{end}}
                 {{end}}
               }
             }

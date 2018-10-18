@@ -6,10 +6,12 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/Azure/acs-engine/pkg/api"
 	"github.com/Azure/acs-engine/pkg/i18n"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // ArtifactWriter represents the object that writes artifacts
@@ -66,6 +68,14 @@ func (w *ArtifactWriter) WriteTLSArtifacts(containerService *api.ContainerServic
 			locations = []string{containerService.Location}
 		} else {
 			locations = AzureLocations
+			// We need an additional customer provided location for hybrid cloud solution (AzureStack).
+			cloudProfileName := getCloudProfileName(properties)
+			if cloudProfileName != "" && strings.EqualFold(cloudProfileName, azureStackCloud) {
+				if properties.CloudProfile.Location == "" {
+					log.Fatalf("CloudProfile type %s has empty location specified '%s'", cloudProfileName, properties.CloudProfile.Location)
+				}
+				locations = append(locations, properties.CloudProfile.Location)
+			}
 		}
 
 		for _, location := range locations {

@@ -96,6 +96,31 @@ $global:AzureCNIConfDir = [Io.path]::Combine("$global:AzureCNIDir", "netconf")
 $global:AzureCNIKubeletOptions = @("--cni-bin-dir=$global:AzureCNIBinDir", "--cni-conf-dir=$global:AzureCNIConfDir")
 $global:AzureCNIEnabled = $false
 
+
+{{if IsAzureStackCloud}}
+
+$global:CloudName = "{{WrapAsVariable "cloudprofileName"}}"
+$global:AzureStackManagementPortalURL = "{{WrapAsVariable "cloudprofileManagementPortalURL"}}"
+$global:AzureStackPublishSettingsURL = "{{WrapAsVariable "cloudprofilePublishSettingsURL"}}"
+$global:AzureStackServiceManagementEndpoint = "{{WrapAsVariable "cloudprofileServiceManagementEndpoint"}}"
+$global:AzureStackResourceManagerEndpoint = "{{WrapAsVariable "cloudprofileResourceManagerEndpoint"}}"
+$global:AzureStackActiveDirectoryEndpoint = "{{WrapAsVariable "cloudprofileActiveDirectoryEndpoint"}}"
+$global:AzureStackGalleryEndpoint = "{{WrapAsVariable "cloudprofileGalleryEndpoint"}}"
+$global:AzureStackKeyVaultEndpoint = "{{WrapAsVariable "cloudprofileKeyVaultEndpoint"}}"
+$global:AzureStackGraphEndpoint = "{{WrapAsVariable "cloudprofileGraphEndpoint"}}"
+$global:AzureStackStorageEndpointSuffix = "{{WrapAsVariable "cloudprofileStorageEndpointSuffix"}}"
+$global:AzureStackSQLDatabaseDNSSuffix = "{{WrapAsVariable "cloudprofileSQLDatabaseDNSSuffix"}}"
+$global:AzureStackTrafficManagerDNSSuffix = "{{WrapAsVariable "cloudprofileTrafficManagerDNSSuffix"}}"
+$global:AzureStackKeyVaultDNSSuffix = "{{WrapAsVariable "cloudprofileKeyVaultDNSSuffix"}}"
+$global:AzureStackServiceBusEndpointSuffix = "{{WrapAsVariable "cloudprofileServiceBusEndpointSuffix"}}"
+$global:AzureStackServiceManagementVMDNSSuffix = "{{WrapAsVariable "cloudprofileServiceManagementVMDNSSuffix"}}"
+$global:AzureStackResourceManagerVMDNSSuffix = "{{WrapAsVariable "cloudprofileResourceManagerVMDNSSuffix"}}"
+$global:AzureStackContainerRegistryDNSSuffix = "{{WrapAsVariable "cloudprofileContainerRegistryDNSSuffix"}}"
+$global:AzureStackLocation = "{{WrapAsVariable "cloudprofileLocation"}}"
+
+{{end}}
+
+
 filter Timestamp {"$(Get-Date -Format o): $_"}
 
 function
@@ -173,6 +198,36 @@ Update-WindowsPackages()
     Get-HnsPsm1
 }
 
+{{if IsAzureStackCloud}}
+function
+Write-AzureStackCloudConfig()
+{
+    $azureStackConfigFile = $global:KubeDir + "\azurestackcloud.json"
+    $azureStackConfig = @"
+{
+    "name": "$global:CloudName",
+    "managementPortalURL": "$global:AzureStackManagementPortalURL",
+    "publishSettingsURL": "$global:AzureStackPublishSettingsURL",
+    "serviceManagementEndpoint": "$global:AzureStackServiceManagementEndpoint",
+    "resourceManagerEndpoint": "$global:AzureStackResourceManagerEndpoint",
+    "activeDirectoryEndpoint": "$global:AzureStackActiveDirectoryEndpoint",
+    "galleryEndpoint": "$global:AzureStackGalleryEndpoint",
+    "keyVaultEndpoint": "$global:AzureStackKeyVaultEndpoint",
+    "graphEndpoint": "$global:AzureStackGraphEndpoint",
+    "storageEndpointSuffix": "$global:AzureStackStorageEndpointSuffix",
+    "sQLDatabaseDNSSuffix": "$global:AzureStackSQLDatabaseDNSSuffix",
+    "trafficManagerDNSSuffix": "$global:AzureStackTrafficManagerDNSSuffix",
+    "keyVaultDNSSuffix": "$global:AzureStackKeyVaultDNSSuffix",
+    "serviceBusEndpointSuffix": "$global:AzureStackServiceBusEndpointSuffix",
+    "serviceManagementVMDNSSuffix": "$global:AzureStackServiceManagementVMDNSSuffix",
+    "resourceManagerVMDNSSuffix": "$global:AzureStackResourceManagerVMDNSSuffix",
+    "containerRegistryDNSSuffix": "$global:AzureStackContainerRegistryDNSSuffix"
+    }
+"@
+    $azureStackConfig | Out-File -encoding ASCII -filepath "$azureStackConfigFile"
+}
+{{end}}
+
 function
 Write-AzureConfig()
 {
@@ -180,6 +235,9 @@ Write-AzureConfig()
 
     $azureConfig = @"
 {
+    {{if IsAzureStackCloud}}
+    "cloud":"$global:CloudName",
+    {{end}}
     "tenantId": "$global:TenantId",
     "subscriptionId": "$global:SubscriptionId",
     "aadClientId": "$AADClientId",
@@ -200,7 +258,7 @@ Write-AzureConfig()
     "excludeMasterFromStandardLB": $global:ExcludeMasterFromStandardLB
 }
 "@
-
+    
     $azureConfig | Out-File -encoding ASCII -filepath "$azureConfigFile"
 }
 
@@ -370,6 +428,9 @@ Write-KubernetesStartFiles($podCIDR)
     # Used in Azure-CNI version of kubeletstart.ps1
     $KubeletCommandLine = "c:\k\kubelet.exe " + ($KubeletArgList -join " ")
 
+    {{if IsAzureStackCloud}}
+    $azureStackConfigFilePath = (Join-Path (Join-Path "c:" "k") "azurestackcloud.json")
+    {{end}}
     $kubeStartStr = @"
 `$global:MasterIP = "$MasterIP"
 `$global:KubeDnsSearchPath = "svc.cluster.local"
@@ -387,6 +448,10 @@ Write-KubernetesStartFiles($podCIDR)
 `$global:NetworkPlugin="$global:NetworkPlugin"
 `$global:KubeletNodeLabels="$global:KubeletNodeLabels"
 
+`$global:NetworkPolicy="$global:NetworkPolicy" 
+{{if IsAzureStackCloud}}
+`$env:AZURE_ENVIRONMENT_FILEPATH= "$azureStackConfigFilePath"
+{{end}}
 "@
 
     if ($global:NetworkPlugin -eq "azure") {
@@ -701,6 +766,10 @@ try
 
         Write-Log "Write ca root"
         Write-CACert
+        {{if IsAzureStackCloud}}
+        Write-Log "Write azure stack config"
+        Write-AzureStackCloudConfig
+        {{end}}
 
         Write-Log "Write kube config"
         Write-KubeConfig

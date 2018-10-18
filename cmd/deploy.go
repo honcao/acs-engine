@@ -227,7 +227,14 @@ func (dc *deployCmd) loadAPIModel(cmd *cobra.Command, args []string) error {
 		return errors.New("--location does not match api model location")
 	}
 
-	if err = dc.getAuthArgs().validateAuthArgs(); err != nil {
+	// For Hybrid cloud we need to write the cloud profile locally.
+	if dc.containerService.Properties.CloudProfile != nil {
+		if strings.EqualFold(dc.containerService.Properties.CloudProfile.Name, "AzureStackCloud") {
+			writeCloudProfile(dc.containerService)
+		}
+	}
+
+	if err = dc.getAuthArgs.validateAuthArgs(); err != nil {
 		return err
 	}
 
@@ -341,7 +348,17 @@ func autofillApimodel(dc *deployCmd) error {
 
 	if !useManagedIdentity {
 		spp := dc.containerService.Properties.ServicePrincipalProfile
+<<<<<<< HEAD
 		if spp != nil && spp.ClientID == "" && spp.Secret == "" && spp.KeyvaultSecretRef == nil && (dc.getAuthArgs().ClientID.String() == "" || dc.getAuthArgs().ClientID.String() == "00000000-0000-0000-0000-000000000000") && dc.getAuthArgs().ClientSecret == "" {
+=======
+		if spp != nil && spp.ClientID == "" && spp.Secret == "" && spp.KeyvaultSecretRef == nil && (dc.ClientID.String() == "" || dc.ClientID.String() == "00000000-0000-0000-0000-000000000000") && dc.ClientSecret == "" {
+			if dc.containerService.Properties.CloudProfile != nil {
+				if strings.EqualFold(dc.containerService.Properties.CloudProfile.Name, "AzureStackCloud") {
+					log.Fatal("AzureStackCloud does not support creating applications using graph endpoint. Please provide a server principal which has access to your access to your subscription.")
+				}
+			}
+
+>>>>>>> tmpazsmaster
 			log.Warnln("apimodel: ServicePrincipalProfile was missing or empty, creating application...")
 
 			// TODO: consider caching the creds here so they persist between subsequent runs of 'deploy'

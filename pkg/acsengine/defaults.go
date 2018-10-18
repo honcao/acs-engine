@@ -16,6 +16,7 @@ import (
 	"github.com/Azure/acs-engine/pkg/openshift/certgen"
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -231,6 +232,29 @@ var (
 			api.AKS:    SovereignCloudsUbuntuImageConfig,
 		},
 	}
+
+	//AzureStackCloudSpec is the default configurations for global azure.
+	AzureStackCloudSpec = AzureEnvironmentSpecConfig{
+		//DockerSpecConfig specify the docker engine download repo
+		DockerSpecConfig: DefaultDockerSpecConfig,
+		//KubernetesSpecConfig is the default kubernetes container image url.
+		KubernetesSpecConfig: DefaultKubernetesSpecConfig,
+		DCOSSpecConfig:       DefaultDCOSSpecConfig,
+
+		EndpointConfig: AzureEndpointConfig{
+			ResourceManagerVMDNSSuffix: "",
+		},
+
+		OSImageConfig: map[api.Distro]AzureOSImageConfig{
+			api.Ubuntu: {
+				ImageOffer:     "UbuntuServer",
+				ImageSku:       "16.04-LTS",
+				ImagePublisher: "Canonical",
+				ImageVersion:   "latest",
+			},
+			api.RHEL: DefaultRHELOSImageConfig,
+		},
+	}
 )
 
 // setPropertiesDefaults for the container Properties, returns true if certs are generated
@@ -262,6 +286,8 @@ func setPropertiesDefaults(cs *api.ContainerService, isUpgrade, isScale bool) (b
 		setHostedMasterProfileDefaults(properties)
 	}
 
+	setAzureStackCloudDefaults(properties)
+
 	certsGenerated, e := setDefaultCerts(properties)
 	if e != nil {
 		return false, e
@@ -269,12 +295,65 @@ func setPropertiesDefaults(cs *api.ContainerService, isUpgrade, isScale bool) (b
 	return certsGenerated, nil
 }
 
+// setAzureStackCloudDefaults set the default for AzureStackCloudSpec
+func setAzureStackCloudDefaults(a *api.Properties) {
+
+	if a.CloudProfile != nil {
+		var cloudprofileResourceManagerVMDNSSuffix = a.CloudProfile.ResourceManagerVMDNSSuffix
+		if cloudprofileResourceManagerVMDNSSuffix == "" {
+			log.Fatalf("CloudProfile type %s has empty resourceManagerVMDNSSuffix specified", a.CloudProfile.Name)
+		}
+
+		AzureStackCloudSpec.EndpointConfig.ResourceManagerVMDNSSuffix = a.CloudProfile.ResourceManagerVMDNSSuffix
+
+		if len(a.CloudProfile.DockerEngineRepo) > 0 {
+			AzureStackCloudSpec.DockerSpecConfig.DockerEngineRepo = a.CloudProfile.DockerEngineRepo
+		}
+		if len(a.CloudProfile.DockerComposeDownloadURL) > 0 {
+			AzureStackCloudSpec.DockerSpecConfig.DockerComposeDownloadURL = a.CloudProfile.DockerComposeDownloadURL
+		}
+		if len(a.CloudProfile.KubernetesDependencyImageBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.KubernetesImageBase = a.CloudProfile.KubernetesDependencyImageBase
+		}
+		if len(a.CloudProfile.TillerImageBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.TillerImageBase = a.CloudProfile.TillerImageBase
+		}
+		if len(a.CloudProfile.ACIConnectorImageBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.ACIConnectorImageBase = a.CloudProfile.ACIConnectorImageBase
+		}
+		if len(a.CloudProfile.EtcdDownloadURLBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.EtcdDownloadURLBase = a.CloudProfile.EtcdDownloadURLBase
+		}
+		if len(a.CloudProfile.KubeBinariesSASURLBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.KubeBinariesSASURLBase = a.CloudProfile.KubeBinariesSASURLBase
+		}
+		if len(a.CloudProfile.WindowsPackageSASURLBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.WindowsPackageSASURLBase = a.CloudProfile.WindowsPackageSASURLBase
+		}
+		if len(a.CloudProfile.WindowsTelemetryGUID) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.WindowsTelemetryGUID = a.CloudProfile.WindowsTelemetryGUID
+		}
+		if len(a.CloudProfile.CNIPluginsDownloadURL) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.CNIPluginsDownloadURL = a.CloudProfile.CNIPluginsDownloadURL
+		}
+		if len(a.CloudProfile.VnetCNILinuxPluginsDownloadURL) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.VnetCNILinuxPluginsDownloadURL = a.CloudProfile.VnetCNILinuxPluginsDownloadURL
+		}
+		if len(a.CloudProfile.VnetCNIWindowsPluginsDownloadURL) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.VnetCNIWindowsPluginsDownloadURL = a.CloudProfile.VnetCNIWindowsPluginsDownloadURL
+		}
+		if len(a.CloudProfile.ContainerdDownloadURLBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.ContainerdDownloadURLBase = a.CloudProfile.ContainerdDownloadURLBase
+		}
+	}
+}
+
 // setOrchestratorDefaults for orchestrators
 func setOrchestratorDefaults(cs *api.ContainerService, isUpdate bool) {
 	location := cs.Location
 	a := cs.Properties
 
-	cloudSpecConfig := getCloudSpecConfig(location)
+	cloudSpecConfig := getCloudSpecConfig(location, cs.Properties)
 	if a.OrchestratorProfile == nil {
 		return
 	}
@@ -720,7 +799,7 @@ func setDefaultCerts(a *api.Properties) (bool, error) {
 		return false, nil
 	}
 
-	masterExtraFQDNs := append(formatAzureProdFQDNs(a.MasterProfile.DNSPrefix), a.MasterProfile.SubjectAltNames...)
+	masterExtraFQDNs := append(formatAzureProdFQDNs(a.MasterProfile.DNSPrefix, a), a.MasterProfile.SubjectAltNames...)
 	firstMasterIP := net.ParseIP(a.MasterProfile.FirstConsecutiveStaticIP).To4()
 
 	if firstMasterIP == nil {
@@ -893,4 +972,15 @@ func generateEtcdEncryptionKey() string {
 	b := make([]byte, 32)
 	rand.Read(b)
 	return base64.StdEncoding.EncodeToString(b)
+}
+
+func getCloudProfileName(properties *api.Properties) string {
+	var cloudProfileName string = ""
+	if properties.CloudProfile != nil {
+		cloudProfileName = properties.CloudProfile.Name
+		if cloudProfileName == "" {
+			log.Fatalf("CloudProfile is present but no name associated with it.")
+		}
+	}
+	return cloudProfileName
 }

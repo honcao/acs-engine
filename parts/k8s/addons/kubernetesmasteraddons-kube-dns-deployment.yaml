@@ -92,6 +92,9 @@ spec:
         configMap:
           name: kube-dns
           optional: true
+      - name: ssl-certs-host
+        hostPath:
+          path: "/etc/ssl/certs"
       containers:
       - name: kubedns
         image: <kubernetesKubeDNSSpec>
@@ -144,6 +147,9 @@ spec:
         volumeMounts:
         - name: kube-dns-config
           mountPath: /kube-dns-config
+        - name: ssl-certs-host
+          mountPath: "/etc/ssl/certs"
+          readOnly: true
       - name: dnsmasq
         image: <kubernetesDNSMasqSpec>
         livenessProbe:
@@ -183,6 +189,9 @@ spec:
         volumeMounts:
         - name: kube-dns-config
           mountPath: /etc/k8s/dns/dnsmasq-nanny
+        - name: ssl-certs-host
+          mountPath: "/etc/ssl/certs"
+          readOnly: true
       - name: sidecar
         image: <kubernetesDNSSidecarSpec>
         livenessProbe:

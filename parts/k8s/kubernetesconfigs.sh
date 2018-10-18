@@ -310,6 +310,17 @@ function createKubeManifestDir() {
     mkdir -p $KUBEMANIFESTDIR
 }
 
+function ensureCertificates()
+{
+    echo "Updating certificates"
+	sudo cp /etc/kubernetes/certs/apiserver.crt /usr/local/share/ca-certificates/
+
+	# Copying the AzureStack root certificate to the appropriate store to be updated.
+	sudo cp /var/lib/waagent/Certificates.pem /usr/local/share/ca-certificates/azsCertificate.crt
+	
+	update-ca-certificates
+}
+
 function writeKubeConfig() {
     KUBECONFIGDIR=/home/$ADMINUSER/.kube
     KUBECONFIGFILE=$KUBECONFIGDIR/config

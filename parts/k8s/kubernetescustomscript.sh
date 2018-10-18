@@ -17,6 +17,19 @@ if [[ $OS == $COREOS_OS_NAME ]]; then
     KUBECTL=/opt/kubectl
 fi
 
+ensureCertificates()
+{
+    echo "Updating certificates"
+	sudo cp /etc/kubernetes/certs/apiserver.crt /usr/local/share/ca-certificates/
+
+	# Copying the AzureStack root certificate to the appropriate store to be updated.
+	sudo cp /var/lib/waagent/Certificates.pem /usr/local/share/ca-certificates/azsCertificate.crt
+	
+	update-ca-certificates
+}
+
+echo `date`,`hostname`, startscript>>/opt/m
+
 if [ -f /var/run/reboot-required ]; then
     REBOOTREQUIRED=true
 else
@@ -31,7 +44,12 @@ else
 fi
 
 function testOutboundConnection() {
-    retrycmd_if_failure 40 1 3 nc -vz www.google.com 443 || retrycmd_if_failure 40 1 3 nc -vz www.1688.com 443 || exit $ERR_OUTBOUND_CONN_FAIL
+    echo "TODO: find a way to verify outside connection in azure stack"
+    #retrycmd_if_failure 20 1 3 nc -v www.google.com 443 || retrycmd_if_failure 20 1 3 nc -v www.1688.com 443 || exit $ERR_OUTBOUND_CONN_FAIL
+}
+
+function waitForCloudInit() {
+    wait_for_file 900 1 /var/log/azure/cloud-init.complete || exit $ERR_CLOUD_INIT_TIMEOUT
 }
 
 function holdWALinuxAgent() {
@@ -40,6 +58,8 @@ function holdWALinuxAgent() {
         retrycmd_if_failure 20 5 30 apt-mark hold walinuxagent || exit $ERR_HOLD_WALINUXAGENT
     fi
 }
+
+ensureCertificates
 
 testOutboundConnection
 
@@ -100,7 +120,6 @@ fi
 
 ensureKubelet
 ensureJournal
-
 
 if [[ ! -z "${MASTER_NODE}" ]]; then
     writeKubeConfig

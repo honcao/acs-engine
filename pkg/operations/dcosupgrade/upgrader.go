@@ -69,7 +69,7 @@ func (uc *UpgradeCluster) runUpgrade() error {
 	newVersion := uc.ClusterTopology.DataModel.Properties.OrchestratorProfile.OrchestratorVersion
 	dashedVersion := strings.Replace(newVersion, ".", "-", -1)
 
-	masterDNS := acsengine.FormatAzureProdFQDN(uc.ClusterTopology.DataModel.Properties.MasterProfile.DNSPrefix, uc.ClusterTopology.DataModel.Location)
+	masterDNS := acsengine.FormatAzureProdFQDN(uc.ClusterTopology.DataModel.Properties.MasterProfile.DNSPrefix, uc.ClusterTopology.DataModel.Location, uc.ClusterTopology.DataModel.Properties)
 	masterCount := uc.ClusterTopology.DataModel.Properties.MasterProfile.Count
 	bootstrapIP := uc.ClusterTopology.DataModel.Properties.OrchestratorProfile.DcosConfig.BootstrapProfile.StaticIP
 	uc.Logger.Infof("masterDNS:%s masterCount:%d bootstrapIP:%s", masterDNS, masterCount, bootstrapIP)

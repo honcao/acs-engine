@@ -1,6 +1,6 @@
     {
 {{if .AcceleratedNetworkingEnabled}}
-      "apiVersion": "2018-04-01",
+      "apiVersion": "2017-10-01",
 {{else}}
       "apiVersion": "[variables('apiVersionDefault')]",
 {{end}}
@@ -74,8 +74,10 @@
           {{end}}
         ]
 {{if not IsAzureCNI}}
-        ,
-        "enableIPForwarding": true
+    {{if not IsAzureStackCloud}}
+		,
+		"enableIPForwarding": true
+	{{end}}
 {{end}}
       },
       "type": "Microsoft.Network/networkInterfaces"
@@ -87,11 +89,18 @@
       "apiVersion": "[variables('apiVersionStorageManagedDisks')]",
       "properties":
         {
+            {{if not IsAzureStackCloud}}
+            "managed" : "true",
+            {{end}}
             "platformFaultDomainCount": 2,
-            "platformUpdateDomainCount": 3,
-		"managed" : "true"
+            "platformUpdateDomainCount": 3
         },
-
+      {{if IsAzureStackCloud}}
+      "sku":
+        {
+            "name": "Aligned"
+        },
+      {{end}}
       "type": "Microsoft.Compute/availabilitySets"
     },
 {{else if .IsStorageAccount}}

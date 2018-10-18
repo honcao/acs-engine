@@ -133,7 +133,7 @@
     "storageAccountBaseName": "",
 {{end}}
 {{if .HasManagedDisks}}
-    "apiVersionStorageManagedDisks": "2016-04-30-preview",
+    "apiVersionStorageManagedDisks": "2017-03-30",
 {{end}}
 {{if .MasterProfile.IsStorageAccount}}
     "masterStorageAccountName": "[concat(variables('storageAccountBaseName'), '0')]",
