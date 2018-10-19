@@ -1,5 +1,5 @@
     {
-{{if .AcceleratedNetworkingEnabled}}
+{{if .IsAcceleratedNetworkingEnabled}}
       "apiVersion": "2018-04-01",
 {{else}}
       "apiVersion": "[variables('apiVersionDefault')]",
@@ -32,7 +32,7 @@
       "location": "[variables('location')]",
       "name": "[concat(variables('{{.Name}}VMNamePrefix'), 'nic-', copyIndex(variables('{{.Name}}Offset')))]",
       "properties": {
-        "enableAcceleratedNetworking" : "{{.AcceleratedNetworkingEnabled}}",
+        "enableAcceleratedNetworking" : "{{.IsAcceleratedNetworkingEnabled}}",
 {{if not IsOpenShift}}
 {{if .IsCustomVNET}}
         "networkSecurityGroup": {
@@ -74,8 +74,10 @@
           {{end}}
         ]
 {{if not IsAzureCNI}}
-        ,
-        "enableIPForwarding": true
+    {{if not IsAzureStackCloud}}
+		,
+		"enableIPForwarding": true
+	  {{end}}
 {{end}}
       },
       "type": "Microsoft.Network/networkInterfaces"
@@ -87,11 +89,18 @@
       "apiVersion": "[variables('apiVersionStorageManagedDisks')]",
       "properties":
         {
+            {{if not IsAzureStackCloud}}
+            "managed" : "true",
+            {{end}}
             "platformFaultDomainCount": 2,
-            "platformUpdateDomainCount": 3,
-		"managed" : "true"
+            "platformUpdateDomainCount": 3
         },
-
+      {{if IsAzureStackCloud}}
+      "sku":
+        {
+            "name": "Aligned"
+        },
+      {{end}}
       "type": "Microsoft.Compute/availabilitySets"
     },
 {{else if .IsStorageAccount}}

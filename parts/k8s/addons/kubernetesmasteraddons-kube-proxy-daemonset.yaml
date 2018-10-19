@@ -46,7 +46,7 @@ spec:
       hostNetwork: true
       volumes:
       - hostPath:
-          path: "/usr/share/ca-certificates"
+          path: "/etc/ssl/certs"
         name: ssl-certs-host
       - hostPath:
           path: "/var/lib/kubelet/kubeconfig"

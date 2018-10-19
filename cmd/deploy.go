@@ -227,6 +227,13 @@ func (dc *deployCmd) loadAPIModel(cmd *cobra.Command, args []string) error {
 		return errors.New("--location does not match api model location")
 	}
 
+	// For Hybrid cloud we need to write the cloud profile locally.
+	if dc.containerService.Properties.CloudProfile != nil {
+		if isAzureStackCloud(dc.containerService.Properties.CloudProfile.Name) {
+			writeCloudProfile(dc.containerService)
+		}
+	}
+
 	if err = dc.getAuthArgs().validateAuthArgs(); err != nil {
 		return err
 	}
@@ -344,6 +351,11 @@ func autofillApimodel(dc *deployCmd) error {
 		if spp != nil && spp.ClientID == "" && spp.Secret == "" && spp.KeyvaultSecretRef == nil && (dc.getAuthArgs().ClientID.String() == "" || dc.getAuthArgs().ClientID.String() == "00000000-0000-0000-0000-000000000000") && dc.getAuthArgs().ClientSecret == "" {
 			log.Warnln("apimodel: ServicePrincipalProfile was missing or empty, creating application...")
 
+			if dc.containerService.Properties.CloudProfile != nil {
+				if isAzureStackCloud(dc.containerService.Properties.CloudProfile.Name) {
+					log.Fatal("AzureStackCloud does not support creating applications using graph endpoint. Please provide a server principal which has access to your access to your subscription.")
+				}
+			}
 			// TODO: consider caching the creds here so they persist between subsequent runs of 'deploy'
 			appName := dc.containerService.Properties.MasterProfile.DNSPrefix
 			appURL := fmt.Sprintf("https://%s/", appName)

@@ -942,3 +942,119 @@
       "type": "string"
     }
  {{end}}
+{{ if  IsAzureStackCloud }}
+    ,"cloudprofileName": {
+      "metadata": {
+        "description": "cloudprofileName"
+      },
+      "type": "string"
+    },
+    "cloudprofileManagementPortalURL": {
+      "metadata": {
+        "description": "cloudprofileManagementPortalURL"
+      },
+      "type": "string"
+    },
+    "cloudprofilePublishSettingsURL": {
+      "metadata": {
+        "description": "cloudprofilePublishSettingsURL"
+      },
+      "type": "string"
+    },
+    "cloudprofileServiceManagementEndpoint": {
+      "metadata": {
+        "description": "cloudprofileServiceManagementEndpoint"
+      },
+      "type": "string"
+    },
+    "cloudprofileResourceManagerEndpoint": {
+      "metadata": {
+        "description": "cloudprofileResourceManagerEndpoint"
+      },
+      "type": "string"
+    },
+    "cloudprofileActiveDirectoryEndpoint": {
+      "metadata": {
+        "description": "cloudprofileActiveDirectoryEndpoint"
+      },
+      "type": "string"
+    },
+    "cloudprofileGalleryEndpoint": {
+      "metadata": {
+        "description": "cloudprofileGalleryEndpoint"
+      },
+      "type": "string"
+    },
+    "cloudprofileKeyVaultEndpoint": {
+      "metadata": {
+        "description": "cloudprofileKeyVaultEndpoint"
+      },
+      "type": "string"
+    },
+    "cloudprofileGraphEndpoint": {
+      "metadata": {
+        "description": "cloudprofileGraphEndpoint"
+      },
+      "type": "string"
+    },
+    "cloudprofileStorageEndpointSuffix": {
+      "metadata": {
+        "description": "cloudprofileStorageEndpointSuffix"
+      },
+      "type": "string"
+    },
+    "cloudprofileSQLDatabaseDNSSuffix": {
+      "metadata": {
+        "description": "cloudprofileSQLDatabaseDNSSuffix"
+      },
+      "type": "string"
+    },
+    "cloudprofileTrafficManagerDNSSuffix": {
+      "metadata": {
+        "description": "cloudprofileTrafficManagerDNSSuffix"
+      },
+      "type": "string"
+    },
+    "cloudprofileKeyVaultDNSSuffix": {
+      "metadata": {
+        "description": "cloudprofileKeyVaultDNSSuffix"
+      },
+      "type": "string"
+    },
+    "cloudprofileServiceBusEndpointSuffix": {
+      "metadata": {
+        "description": "cloudprofileServiceBusEndpointSuffix"
+      },
+      "type": "string"
+    },
+    "cloudprofileServiceManagementVMDNSSuffix": {
+      "metadata": {
+        "description": "cloudprofileServiceManagementVMDNSSuffix"
+      },
+      "type": "string"
+    },
+    "cloudprofileResourceManagerVMDNSSuffix": {
+      "metadata": {
+        "description": "cloudprofileResourceManagerVMDNSSuffix"
+      },
+      "type": "string"
+    },
+    "cloudprofileContainerRegistryDNSSuffix": {
+      "metadata": {
+        "description": "cloudprofileContainerRegistryDNSSuffix"
+      },
+      "type": "string"
+    },
+    "cloudprofileResourceManagerRootCertificate": {
+      "metadata": {
+        "description": "cloudprofileResourceManagerRootCertificate"
+      },
+      "type": "string"
+    },
+    "cloudprofileLocation": {
+      "metadata": {
+        "description": "cloudprofileLocation"
+      },
+      "type": "string"
+    }
+{{ end }}

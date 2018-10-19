@@ -4,11 +4,19 @@
       "location": "[variables('location')]",
       "name": "[variables('masterAvailabilitySet')]",
       "properties":
+      {
+        {{if not IsAzureStackCloud}}
+        "managed" : "true",
+        {{end}}
+        "platformFaultDomainCount": 2,
+        "platformUpdateDomainCount": 3
+    },
+      {{if IsAzureStackCloud}}
+      "sku":
         {
-            "platformFaultDomainCount": 2,
-            "platformUpdateDomainCount": 3,
-		        "managed" : true
+          "name": "Aligned"
         },
+      {{end}}
       "type": "Microsoft.Compute/availabilitySets"
     },
 {{else if .MasterProfile.IsStorageAccount}}
@@ -148,7 +156,11 @@
         "dnsSettings": {
           "domainNameLabel": "[variables('masterFqdnPrefix')]"
         },
+        {{if IsAzureStackCloud}}
+        "publicIPAllocationMethod": "Static"
+        {{else}}
         "publicIPAllocationMethod": "Dynamic"
+        {{end}}
       },
       "type": "Microsoft.Network/publicIPAddresses"
     },
@@ -305,8 +317,10 @@
 {{end}}
         ]
 {{if not IsAzureCNI}}
+    {{if not IsAzureStackCloud}}
         ,
         "enableIPForwarding": true
+    {{end}}
 {{end}}
 {{if HasCustomNodesDNS}}
  ,"dnsSettings": {
@@ -388,8 +402,10 @@
   {{end}}
           ]
   {{if not IsAzureCNI}}
-          ,
-          "enableIPForwarding": true
+    {{if not IsAzureStackCloud}}
+        ,
+        "enableIPForwarding": true
+    {{end}}
   {{end}}
   {{if HasCustomNodesDNS}}
    ,"dnsSettings": {
@@ -520,7 +536,11 @@
           "dnsSettings": {
             "domainNameLabel": "[variables('masterFqdnPrefix')]"
           },
-          "publicIpAllocationMethod": "Dynamic"
+          {{if IsAzureStackCloud}}
+          "publicIPAllocationMethod": "Static"
+          {{else}}
+          "publicIPAllocationMethod": "Dynamic"
+          {{end}}
       }
     },
     {

@@ -53,6 +53,17 @@ function installGPUDrivers() {
     mount -t overlay -o lowerdir=/usr/lib/x86_64-linux-gnu,upperdir=$GPU_DEST/lib64,workdir=$GPU_DEST/overlay-workdir none /usr/lib/x86_64-linux-gnu
 }
 
+function ensureCertificates()
+{
+    echo "Updating certificates"
+	sudo cp /etc/kubernetes/certs/apiserver.crt /usr/local/share/ca-certificates/
+
+	# Copying the AzureStack root certificate to the appropriate store to be updated.
+	sudo cp /var/lib/waagent/Certificates.pem /usr/local/share/ca-certificates/azsCertificate.crt
+	
+	update-ca-certificates
+}
+
 function installContainerRuntime() {
     if [[ "$CONTAINER_RUNTIME" == "docker" ]]; then
         installDocker

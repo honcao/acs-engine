@@ -83,7 +83,11 @@
     "masterCount": {{.MasterProfile.Count}},
     "masterOffset": "[parameters('masterOffset')]",
 {{end}}
+{{if not IsAzureStackCloud}}
     "apiVersionDefault": "2016-03-30",
+{{ else }}
+    "apiVersionDefault": "2015-06-15",
+{{end}}
     "apiVersionLinkDefault": "2015-01-01",
     "locations": [
          "[resourceGroup().location]",
@@ -117,14 +121,22 @@
     "storageAccountPrefixes": [],
     "storageAccountBaseName": "",
 {{end}}
-{{if UserAssignedIDEnabled}}
+{{if UserAssignedIDEnabled}}apiVersionStorageManagedDisks
     "apiVersionUserMSI": "2018-06-01",
 {{end}}
 {{if .HasManagedDisks}}
+    {{if IsAzureStackCloud}}
+    "apiVersionStorageManagedDisks": "2017-03-30",
+    {{else}}
     "apiVersionStorageManagedDisks": "2016-04-30-preview",
+    {{end}}
 {{end}}
 {{if .HasVMSSAgentPool}}
+    {{if IsAzureStackCloud}}
+    "apiVersionVirtualMachineScaleSets": "2017-03-30",
+    {{else}}
     "apiVersionVirtualMachineScaleSets": "2017-12-01",
+    {{end}}
 {{end}}
 {{if not IsHostedMaster}}
   {{if .MasterProfile.IsStorageAccount}}
@@ -232,6 +244,9 @@
         "masterInternalLbIPConfigID": "[concat(variables('masterInternalLbID'),'/frontendIPConfigurations/', variables('masterInternalLbIPConfigName'))]",
         "masterInternalLbIPOffset": {{GetDefaultInternalLbStaticIPOffset}},
         "kubernetesAPIServerIP": "[concat(variables('masterFirstAddrPrefix'), add(variables('masterInternalLbIPOffset'), int(variables('masterFirstAddrOctet4'))))]",
+        {{if IsAzureStackCloud}}
+        "masterPublicLbFQDN": "[concat(variables('masterFqdnPrefix'), '.', variables('location'), '.', parameters('fqdnEndpointSuffix'))]",
+        {{end}}
     {{else}}
       "kubernetesAPIServerIP": "[parameters('firstConsecutiveStaticIP')]",
     {{end}}
@@ -315,4 +330,25 @@
      "clusterKeyVaultName": "[take(concat('kv', tolower(uniqueString(concat(variables('masterFqdnPrefix'),variables('location'),parameters('nameSuffix'))))), 22)]"
 {{else}}
     ,"clusterKeyVaultName": ""
+{{end}}
+{{if IsAzureStackCloud}}
+   ,"cloudprofileName": "[parameters('cloudprofileName')]",
+    "cloudprofileManagementPortalURL": "[parameters('cloudprofileManagementPortalURL')]",
+    "cloudprofilePublishSettingsURL": "[parameters('cloudprofilePublishSettingsURL')]",
+    "cloudprofileServiceManagementEndpoint": "[parameters('cloudprofileServiceManagementEndpoint')]",
+    "cloudprofileResourceManagerEndpoint": "[parameters('cloudprofileResourceManagerEndpoint')]",
+    "cloudprofileActiveDirectoryEndpoint": "[parameters('cloudprofileActiveDirectoryEndpoint')]",
+    "cloudprofileGalleryEndpoint": "[parameters('cloudprofileGalleryEndpoint')]",
+    "cloudprofileKeyVaultEndpoint": "[parameters('cloudprofileKeyVaultEndpoint')]",
+    "cloudprofileGraphEndpoint": "[parameters('cloudprofileGraphEndpoint')]",
+    "cloudprofileStorageEndpointSuffix": "[parameters('cloudprofileStorageEndpointSuffix')]",
+    "cloudprofileSQLDatabaseDNSSuffix": "[parameters('cloudprofileSQLDatabaseDNSSuffix')]",
+    "cloudprofileTrafficManagerDNSSuffix": "[parameters('cloudprofileTrafficManagerDNSSuffix')]",
+    "cloudprofileKeyVaultDNSSuffix": "[parameters('cloudprofileKeyVaultDNSSuffix')]",
+    "cloudprofileServiceBusEndpointSuffix": "[parameters('cloudprofileServiceBusEndpointSuffix')]",
+    "cloudprofileServiceManagementVMDNSSuffix": "[parameters('cloudprofileServiceManagementVMDNSSuffix')]",
+    "cloudprofileResourceManagerVMDNSSuffix": "[parameters('cloudprofileResourceManagerVMDNSSuffix')]",
+    "cloudprofileContainerRegistryDNSSuffix": "[parameters('cloudprofileContainerRegistryDNSSuffix')]",
+    "cloudprofileResourceManagerRootCertificate": "[parameters('cloudprofileResourceManagerRootCertificate')]",
+	"cloudprofileLocation": "[parameters('cloudprofileLocation')]"
 {{end}}
