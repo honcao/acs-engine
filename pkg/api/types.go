@@ -965,6 +965,11 @@ func (m *MasterProfile) IsStorageAccount() bool {
 	return m.StorageProfile == StorageAccount
 }
 
+// IsAcceleratedNetworkingEnabled returns true if AcceleratedNetworkingEnabled is true
+func (a *AgentPoolProfile) IsAcceleratedNetworkingEnabled() bool {
+	return *a.AcceleratedNetworkingEnabled
+}
+
 // IsRHEL returns true if the master specified a RHEL distro
 func (m *MasterProfile) IsRHEL() bool {
 	return m.Distro == RHEL

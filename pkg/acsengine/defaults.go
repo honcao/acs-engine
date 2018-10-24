@@ -235,6 +235,7 @@ var (
 
 	//AzureStackCloudSpec is the default configurations for global azure.
 	AzureStackCloudSpec = AzureEnvironmentSpecConfig{
+		CloudName: azureStackCloud,
 		//DockerSpecConfig specify the docker engine download repo
 		DockerSpecConfig: DefaultDockerSpecConfig,
 		//KubernetesSpecConfig is the default kubernetes container image url.
