@@ -280,7 +280,15 @@ func tryLoadCachedToken(cachePath string) (*adal.Token, error) {
 }
 
 func getOAuthConfig(env azure.Environment, subscriptionID string) (*adal.OAuthConfig, string, error) {
-	tenantID, err := acsengine.GetTenantID(env.ResourceManagerEndpoint, subscriptionID)
+	var err error
+	var tenantID string
+	if strings.Contains(strings.ToUpper(env.ActiveDirectoryEndpoint), strings.ToUpper("https://adfs")) {
+		err = nil
+		tenantID = "adfs"
+	} else {
+		tenantID, err = acsengine.GetTenantID(env.ResourceManagerEndpoint, subscriptionID)
+	}
+
 	if err != nil {
 		return nil, "", err
 	}
