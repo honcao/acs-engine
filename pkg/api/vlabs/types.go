@@ -419,25 +419,38 @@ type Extension struct {
 
 // CloudProfile Represents Azure Enviornment
 type CloudProfile struct {
-	Name                           string `json:"name,omitempty"`
-	ManagementPortalURL            string `json:"managementPortalURL,omitempty"`
-	PublishSettingsURL             string `json:"publishSettingsURL,omitempty"`
-	ServiceManagementEndpoint      string `json:"serviceManagementEndpoint,omitempty"`
-	ResourceManagerEndpoint        string `json:"resourceManagerEndpoint,omitempty"`
-	ActiveDirectoryEndpoint        string `json:"activeDirectoryEndpoint,omitempty"`
-	GalleryEndpoint                string `json:"galleryEndpoint,omitempty"`
-	KeyVaultEndpoint               string `json:"keyVaultEndpoint,omitempty"`
-	GraphEndpoint                  string `json:"graphEndpoint,omitempty"`
-	StorageEndpointSuffix          string `json:"storageEndpointSuffix,omitempty"`
-	SQLDatabaseDNSSuffix           string `json:"sqlDatabaseDNSSuffix,omitempty"`
-	TrafficManagerDNSSuffix        string `json:"trafficManagerDNSSuffix,omitempty"`
-	KeyVaultDNSSuffix              string `json:"keyVaultDNSSuffix,omitempty"`
-	ServiceBusEndpointSuffix       string `json:"serviceBusEndpointSuffix,omitempty"`
-	ServiceManagementVMDNSSuffix   string `json:"serviceManagementVMDNSSuffix,omitempty"`
-	ResourceManagerVMDNSSuffix     string `json:"resourceManagerVMDNSSuffix,omitempty"`
-	ContainerRegistryDNSSuffix     string `json:"containerRegistryDNSSuffix,omitempty"`
-	ResourceManagerRootCertificate string `json:"resourceManagerRootCertificate,omitempty"`
-	Location                       string `json:"location,omitempty"`
+	Name                             string `json:"name,omitempty"`
+	ManagementPortalURL              string `json:"managementPortalURL,omitempty"`
+	PublishSettingsURL               string `json:"publishSettingsURL,omitempty"`
+	ServiceManagementEndpoint        string `json:"serviceManagementEndpoint,omitempty"`
+	ResourceManagerEndpoint          string `json:"resourceManagerEndpoint,omitempty"`
+	ActiveDirectoryEndpoint          string `json:"activeDirectoryEndpoint,omitempty"`
+	GalleryEndpoint                  string `json:"galleryEndpoint,omitempty"`
+	KeyVaultEndpoint                 string `json:"keyVaultEndpoint,omitempty"`
+	GraphEndpoint                    string `json:"graphEndpoint,omitempty"`
+	StorageEndpointSuffix            string `json:"storageEndpointSuffix,omitempty"`
+	SQLDatabaseDNSSuffix             string `json:"sqlDatabaseDNSSuffix,omitempty"`
+	TrafficManagerDNSSuffix          string `json:"trafficManagerDNSSuffix,omitempty"`
+	KeyVaultDNSSuffix                string `json:"keyVaultDNSSuffix,omitempty"`
+	ServiceBusEndpointSuffix         string `json:"serviceBusEndpointSuffix,omitempty"`
+	ServiceManagementVMDNSSuffix     string `json:"serviceManagementVMDNSSuffix,omitempty"`
+	ResourceManagerVMDNSSuffix       string `json:"resourceManagerVMDNSSuffix,omitempty"`
+	ContainerRegistryDNSSuffix       string `json:"containerRegistryDNSSuffix,omitempty"`
+	ResourceManagerRootCertificate   string `json:"resourceManagerRootCertificate,omitempty"`
+	Location                         string `json:"location,omitempty"`
+	DockerEngineRepo                 string `json:"dockerEngineRepo,omitempty"`
+	DockerComposeDownloadURL         string `json:"dockerComposeDownloadURL,omitempty"`
+	KubernetesDependencyImageBase    string `json:"kubernetesDependencyImageBase,omitempty"`
+	TillerImageBase                  string `json:"tillerImageBase,omitempty"`
+	ACIConnectorImageBase            string `json:"aciConnectorImageBase,omitempty"`
+	EtcdDownloadURLBase              string `json:"etcdDownloadURLBase,omitempty"`
+	KubeBinariesSASURLBase           string `json:"kubeBinariesSASURLBase,omitempty"`
+	WindowsPackageSASURLBase         string `json:"windowsPackageSASURLBase,omitempty"`
+	WindowsTelemetryGUID             string `json:"windowsTelemetryGUID,omitempty"`
+	CNIPluginsDownloadURL            string `json:"cniPluginsDownloadURL,omitempty"`
+	VnetCNILinuxPluginsDownloadURL   string `json:"vnetCNILinuxPluginsDownloadURL,omitempty"`
+	VnetCNIWindowsPluginsDownloadURL string `json:"vnetCNIWindowsPluginsDownloadURL,omitempty"`
+	ContainerdDownloadURLBase        string `json:"containerdDownloadURLBase,omitempty"`
 }
 
 // AgentPoolProfile represents an agent pool definition

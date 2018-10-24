@@ -601,6 +601,19 @@ func convertVLabsCloudProfile(vlabscs *vlabs.CloudProfile, api *CloudProfile) {
 	api.ContainerRegistryDNSSuffix = vlabscs.ContainerRegistryDNSSuffix
 	api.ResourceManagerRootCertificate = vlabscs.ResourceManagerRootCertificate
 	api.Location = vlabscs.Location
+	api.DockerEngineRepo = vlabscs.DockerEngineRepo
+	api.DockerComposeDownloadURL = vlabscs.DockerComposeDownloadURL
+	api.KubernetesDependencyImageBase = vlabscs.KubernetesDependencyImageBase
+	api.TillerImageBase = vlabscs.TillerImageBase
+	api.ACIConnectorImageBase = vlabscs.ACIConnectorImageBase
+	api.EtcdDownloadURLBase = vlabscs.EtcdDownloadURLBase
+	api.KubeBinariesSASURLBase = vlabscs.KubeBinariesSASURLBase
+	api.WindowsPackageSASURLBase = vlabscs.WindowsPackageSASURLBase
+	api.WindowsTelemetryGUID = vlabscs.WindowsTelemetryGUID
+	api.CNIPluginsDownloadURL = vlabscs.CNIPluginsDownloadURL
+	api.VnetCNILinuxPluginsDownloadURL = vlabscs.VnetCNILinuxPluginsDownloadURL
+	api.VnetCNIWindowsPluginsDownloadURL = vlabscs.VnetCNIWindowsPluginsDownloadURL
+	api.ContainerdDownloadURLBase = vlabscs.ContainerdDownloadURLBase
 }
 
 func convertVLabsOrchestratorProfile(vp *vlabs.Properties, api *OrchestratorProfile, isUpdate bool) {
