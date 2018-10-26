@@ -212,6 +212,20 @@ func (t *TemplateGenerator) getTemplateFuncMap(cs *api.ContainerService) templat
 		"IsMultipleMasters": func() bool {
 			return cs.Properties.MasterProfile.Count > 1
 		},
+		"GetIdentitySystem": func() string {
+			if cs.Properties.CloudProfile != nil {
+				if strings.EqualFold(cs.Properties.CloudProfile.IdentitySystem, adfsIdentitySystem) {
+					return adfsIdentitySystem
+				}
+			}
+			return azureADIdentitySystem
+		},
+		"GetAuthMethod": func() string {
+			if cs.Properties.ServicePrincipalProfile.KeyvaultSecretRef != nil {
+				return authMethodClientCertificate
+			}
+			return authMethodClientSecret
+		},
 		"IsMasterVirtualMachineScaleSets": func() bool {
 			return cs.Properties.MasterProfile != nil && cs.Properties.MasterProfile.IsVirtualMachineScaleSets()
 		},

@@ -346,6 +346,9 @@ func setAzureStackCloudDefaults(a *api.Properties) {
 		if len(a.CloudProfile.ContainerdDownloadURLBase) > 0 {
 			AzureStackCloudSpec.KubernetesSpecConfig.ContainerdDownloadURLBase = a.CloudProfile.ContainerdDownloadURLBase
 		}
+		if len(a.CloudProfile.IdentitySystem) == 0 {
+			a.CloudProfile.IdentitySystem = azureADIdentitySystem
+		}
 	}
 }
 

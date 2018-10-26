@@ -493,6 +493,7 @@ type CloudProfile struct {
 	ContainerRegistryDNSSuffix       string `json:"containerRegistryDNSSuffix,omitempty"`
 	ResourceManagerRootCertificate   string `json:"resourceManagerRootCertificate,omitempty"`
 	Location                         string `json:"location,omitempty"`
+	IdentitySystem                   string `json:"identitySystem,omitempty"`
 	DockerEngineRepo                 string `json:"dockerEngineRepo,omitempty"`
 	DockerComposeDownloadURL         string `json:"dockerComposeDownloadURL,omitempty"`
 	KubernetesDependencyImageBase    string `json:"kubernetesDependencyImageBase,omitempty"`

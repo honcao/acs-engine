@@ -601,6 +601,7 @@ func convertVLabsCloudProfile(vlabscs *vlabs.CloudProfile, api *CloudProfile) {
 	api.ContainerRegistryDNSSuffix = vlabscs.ContainerRegistryDNSSuffix
 	api.ResourceManagerRootCertificate = vlabscs.ResourceManagerRootCertificate
 	api.Location = vlabscs.Location
+	api.IdentitySystem = vlabscs.IdentitySystem
 	api.DockerEngineRepo = vlabscs.DockerEngineRepo
 	api.DockerComposeDownloadURL = vlabscs.DockerComposeDownloadURL
 	api.KubernetesDependencyImageBase = vlabscs.KubernetesDependencyImageBase
