@@ -16,6 +16,7 @@ func ConvertDeploymentExtended(azsde azsresources.DeploymentExtended) resources.
 	// TODO: find out the value
 	de.Location = to.StringPtr("")
 	if azsde.Properties != nil {
+		de.Properties = &resources.DeploymentPropertiesExtended{}
 		de.Properties.ProvisioningState = azsde.Properties.ProvisioningState
 		de.Properties.CorrelationID = azsde.Properties.CorrelationID
 		de.Properties.Timestamp = azsde.Properties.Timestamp
