@@ -262,6 +262,8 @@ var (
 func setPropertiesDefaults(cs *api.ContainerService, isUpgrade, isScale bool) (bool, error) {
 	properties := cs.Properties
 
+	setAzureStackCloudDefaults(properties)
+
 	setOrchestratorDefaults(cs, isUpgrade || isScale)
 
 	// Set master profile defaults if this cluster configuration includes master node(s)
@@ -286,8 +288,6 @@ func setPropertiesDefaults(cs *api.ContainerService, isUpgrade, isScale bool) (b
 	if cs.Properties.HostedMasterProfile != nil {
 		setHostedMasterProfileDefaults(properties)
 	}
-
-	setAzureStackCloudDefaults(properties)
 
 	certsGenerated, e := setDefaultCerts(properties)
 	if e != nil {
@@ -325,6 +325,16 @@ func setAzureStackCloudDefaults(a *api.Properties) {
 		if len(a.CloudProfile.EtcdDownloadURLBase) > 0 {
 			AzureStackCloudSpec.KubernetesSpecConfig.EtcdDownloadURLBase = a.CloudProfile.EtcdDownloadURLBase
 		}
+		if len(a.CloudProfile.NVIDIAImageBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.NVIDIAImageBase = a.CloudProfile.NVIDIAImageBase
+		}
+		if len(a.CloudProfile.AzureCNIImageBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.AzureCNIImageBase = a.CloudProfile.AzureCNIImageBase
+		}
+		if len(a.CloudProfile.AzureCNIBinariesBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.VnetCNILinuxPluginsDownloadURL = a.CloudProfile.AzureCNIBinariesBase + "azure-vnet-cni-linux-amd64-" + AzureCniPluginVerLinux + ".tgz"
+			AzureStackCloudSpec.KubernetesSpecConfig.VnetCNIWindowsPluginsDownloadURL = a.CloudProfile.AzureCNIBinariesBase + "azure-vnet-cni-windows-amd64-" + AzureCniPluginVerWindows + ".zip"
+		}
 		if len(a.CloudProfile.KubeBinariesSASURLBase) > 0 {
 			AzureStackCloudSpec.KubernetesSpecConfig.KubeBinariesSASURLBase = a.CloudProfile.KubeBinariesSASURLBase
 		}
@@ -334,8 +344,8 @@ func setAzureStackCloudDefaults(a *api.Properties) {
 		if len(a.CloudProfile.WindowsTelemetryGUID) > 0 {
 			AzureStackCloudSpec.KubernetesSpecConfig.WindowsTelemetryGUID = a.CloudProfile.WindowsTelemetryGUID
 		}
-		if len(a.CloudProfile.CNIPluginsDownloadURL) > 0 {
-			AzureStackCloudSpec.KubernetesSpecConfig.CNIPluginsDownloadURL = a.CloudProfile.CNIPluginsDownloadURL
+		if len(a.CloudProfile.CNIPluginsDownloadURLBase) > 0 {
+			AzureStackCloudSpec.KubernetesSpecConfig.CNIPluginsDownloadURL = a.CloudProfile.CNIPluginsDownloadURLBase + "cni-plugins-amd64-" + CNIPluginVer + ".tgz"
 		}
 		if len(a.CloudProfile.VnetCNILinuxPluginsDownloadURL) > 0 {
 			AzureStackCloudSpec.KubernetesSpecConfig.VnetCNILinuxPluginsDownloadURL = a.CloudProfile.VnetCNILinuxPluginsDownloadURL

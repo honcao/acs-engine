@@ -445,10 +445,13 @@ type CloudProfile struct {
 	TillerImageBase                  string `json:"tillerImageBase,omitempty"`
 	ACIConnectorImageBase            string `json:"aciConnectorImageBase,omitempty"`
 	EtcdDownloadURLBase              string `json:"etcdDownloadURLBase,omitempty"`
+	NVIDIAImageBase                  string `json:"nvidiaImageBase,omitempty"`
+	AzureCNIImageBase                string `json:"azureCNIImageBase,omitempty"`
+	AzureCNIBinariesBase             string `json:"azureCNIBinariesBase,omitempty"`
 	KubeBinariesSASURLBase           string `json:"kubeBinariesSASURLBase,omitempty"`
 	WindowsPackageSASURLBase         string `json:"windowsPackageSASURLBase,omitempty"`
 	WindowsTelemetryGUID             string `json:"windowsTelemetryGUID,omitempty"`
-	CNIPluginsDownloadURL            string `json:"cniPluginsDownloadURL,omitempty"`
+	CNIPluginsDownloadURLBase        string `json:"cniPluginsDownloadURLBase,omitempty"`
 	VnetCNILinuxPluginsDownloadURL   string `json:"vnetCNILinuxPluginsDownloadURL,omitempty"`
 	VnetCNIWindowsPluginsDownloadURL string `json:"vnetCNIWindowsPluginsDownloadURL,omitempty"`
 	ContainerdDownloadURLBase        string `json:"containerdDownloadURLBase,omitempty"`
