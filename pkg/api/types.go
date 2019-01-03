@@ -67,6 +67,7 @@ type Properties struct {
 	HostedMasterProfile     *HostedMasterProfile     `json:"hostedMasterProfile,omitempty"`
 	AddonProfiles           map[string]AddonProfile  `json:"addonProfiles,omitempty"`
 	AzProfile               *AzProfile               `json:"azProfile,omitempty"`
+	CloudProfile            *CloudProfile            `json:"cloudProfile,omitempty"`
 }
 
 // ClusterMetadata represents the metadata of the ACS cluster.
@@ -469,6 +470,46 @@ type Extension struct {
 	Name        string `json:"name"`
 	SingleOrAll string `json:"singleOrAll"`
 	Template    string `json:"template"`
+}
+
+// CloudProfile Represents Azure Enviornment
+type CloudProfile struct {
+	Name                             string `json:"name,omitempty"`
+	ManagementPortalURL              string `json:"managementPortalURL,omitempty"`
+	PublishSettingsURL               string `json:"publishSettingsURL,omitempty"`
+	ServiceManagementEndpoint        string `json:"serviceManagementEndpoint,omitempty"`
+	ResourceManagerEndpoint          string `json:"resourceManagerEndpoint,omitempty"`
+	ActiveDirectoryEndpoint          string `json:"activeDirectoryEndpoint,omitempty"`
+	GalleryEndpoint                  string `json:"galleryEndpoint,omitempty"`
+	KeyVaultEndpoint                 string `json:"keyVaultEndpoint,omitempty"`
+	GraphEndpoint                    string `json:"graphEndpoint,omitempty"`
+	StorageEndpointSuffix            string `json:"storageEndpointSuffix,omitempty"`
+	SQLDatabaseDNSSuffix             string `json:"sqlDatabaseDNSSuffix,omitempty"`
+	TrafficManagerDNSSuffix          string `json:"trafficManagerDNSSuffix,omitempty"`
+	KeyVaultDNSSuffix                string `json:"keyVaultDNSSuffix,omitempty"`
+	ServiceBusEndpointSuffix         string `json:"serviceBusEndpointSuffix,omitempty"`
+	ServiceManagementVMDNSSuffix     string `json:"serviceManagementVMDNSSuffix,omitempty"`
+	ResourceManagerVMDNSSuffix       string `json:"resourceManagerVMDNSSuffix,omitempty"`
+	ContainerRegistryDNSSuffix       string `json:"containerRegistryDNSSuffix,omitempty"`
+	ResourceManagerRootCertificate   string `json:"resourceManagerRootCertificate,omitempty"`
+	Location                         string `json:"location,omitempty"`
+	IdentitySystem                   string `json:"identitySystem,omitempty"`
+	DockerEngineRepo                 string `json:"dockerEngineRepo,omitempty"`
+	DockerComposeDownloadURL         string `json:"dockerComposeDownloadURL,omitempty"`
+	KubernetesDependencyImageBase    string `json:"kubernetesDependencyImageBase,omitempty"`
+	TillerImageBase                  string `json:"tillerImageBase,omitempty"`
+	ACIConnectorImageBase            string `json:"aciConnectorImageBase,omitempty"`
+	EtcdDownloadURLBase              string `json:"etcdDownloadURLBase,omitempty"`
+	NVIDIAImageBase                  string `json:"nvidiaImageBase,omitempty"`
+	AzureCNIImageBase                string `json:"azureCNIImageBase,omitempty"`
+	AzureCNIBinariesBase             string `json:"azureCNIBinariesBase,omitempty"`
+	KubeBinariesSASURLBase           string `json:"kubeBinariesSASURLBase,omitempty"`
+	WindowsPackageSASURLBase         string `json:"windowsPackageSASURLBase,omitempty"`
+	WindowsTelemetryGUID             string `json:"windowsTelemetryGUID,omitempty"`
+	CNIPluginsDownloadURLBase        string `json:"cniPluginsDownloadURLBase,omitempty"`
+	VnetCNILinuxPluginsDownloadURL   string `json:"vnetCNILinuxPluginsDownloadURL,omitempty"`
+	VnetCNIWindowsPluginsDownloadURL string `json:"vnetCNIWindowsPluginsDownloadURL,omitempty"`
+	ContainerdDownloadURLBase        string `json:"containerdDownloadURLBase,omitempty"`
 }
 
 // AgentPoolProfile represents an agent pool definition
@@ -926,6 +967,11 @@ func (m *MasterProfile) IsManagedDisks() bool {
 // IsStorageAccount returns true if the master specified storage account
 func (m *MasterProfile) IsStorageAccount() bool {
 	return m.StorageProfile == StorageAccount
+}
+
+// IsAcceleratedNetworkingEnabled returns true if AcceleratedNetworkingEnabled is true
+func (a *AgentPoolProfile) IsAcceleratedNetworkingEnabled() bool {
+	return *a.AcceleratedNetworkingEnabled
 }
 
 // IsRHEL returns true if the master specified a RHEL distro

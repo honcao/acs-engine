@@ -122,20 +122,8 @@ func (sc *scaleCmd) load(cmd *cobra.Command) error {
 	sc.logger = log.New().WithField("source", "scaling command line")
 	var err error
 
-	if err = sc.authArgs.validateAuthArgs(); err != nil {
-		return err
-	}
-
-	if sc.client, err = sc.authArgs.getClient(); err != nil {
-		return errors.Wrap(err, "failed to get client")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), armhelpers.DefaultARMOperationTimeout)
 	defer cancel()
-	_, err = sc.client.EnsureResourceGroup(ctx, sc.resourceGroupName, sc.location, nil)
-	if err != nil {
-		return err
-	}
 
 	// load apimodel from the deployment directory
 	sc.apiModelPath = path.Join(sc.deploymentDirectory, "apimodel.json")
@@ -152,6 +140,26 @@ func (sc *scaleCmd) load(cmd *cobra.Command) error {
 	sc.containerService, sc.apiVersion, err = apiloader.LoadContainerServiceFromFile(sc.apiModelPath, true, true, nil)
 	if err != nil {
 		return errors.Wrap(err, "error parsing the api model")
+	}
+
+	// For Hybrid cloud we need to write the cloud profile locally.
+	if sc.containerService.Properties.CloudProfile != nil {
+		if isAzureStackCloud(sc.containerService.Properties.CloudProfile.Name) {
+			writeCloudProfile(sc.containerService)
+		}
+	}
+
+	if err = sc.authArgs.validateAuthArgs(); err != nil {
+		return err
+	}
+
+	if sc.client, err = sc.authArgs.getClient(); err != nil {
+		return errors.Wrap(err, "failed to get client")
+	}
+
+	_, err = sc.client.EnsureResourceGroup(ctx, sc.resourceGroupName, sc.location, nil)
+	if err != nil {
+		return err
 	}
 
 	if sc.containerService.Location == "" {

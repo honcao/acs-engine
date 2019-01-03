@@ -302,8 +302,13 @@ const (
 )
 
 const (
-	azurePublicCloud       = "AzurePublicCloud"
-	azureChinaCloud        = "AzureChinaCloud"
-	azureGermanCloud       = "AzureGermanCloud"
-	azureUSGovernmentCloud = "AzureUSGovernmentCloud"
+	azurePublicCloud            = "AzurePublicCloud"
+	azureChinaCloud             = "AzureChinaCloud"
+	azureGermanCloud            = "AzureGermanCloud"
+	azureUSGovernmentCloud      = "AzureUSGovernmentCloud"
+	azureStackCloud             = "AzureStackCloud"
+	azureADIdentitySystem       = "AzureAD"
+	adfsIdentitySystem          = "ADFS"
+	authMethodClientSecret      = "client_secret"
+	authMethodClientCertificate = "client_Certificate"
 )

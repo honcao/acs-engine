@@ -2,13 +2,17 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Azure/acs-engine/pkg/api"
 	"github.com/Azure/acs-engine/pkg/api/vlabs"
 	"github.com/Azure/acs-engine/pkg/armhelpers"
+	"github.com/Azure/acs-engine/pkg/armhelpers/azurestack"
 	"github.com/Azure/acs-engine/pkg/helpers"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/pkg/errors"
@@ -20,9 +24,10 @@ import (
 )
 
 const (
-	rootName             = "acs-engine"
-	rootShortDescription = "ACS-Engine deploys and manages container orchestrators in Azure"
-	rootLongDescription  = "ACS-Engine deploys and manages Kubernetes, OpenShift, Swarm Mode, and DC/OS clusters in Azure"
+	rootName                  = "acs-engine"
+	rootShortDescription      = "ACS-Engine deploys and manages container orchestrators in Azure"
+	rootLongDescription       = "ACS-Engine deploys and manages Kubernetes, OpenShift, Swarm Mode, and DC/OS clusters in Azure"
+	azureStackEnvironmentName = "AzureStackCloud"
 )
 
 var (
@@ -144,6 +149,7 @@ func (authArgs *authArgs) validateAuthArgs() error {
 		authArgs.SubscriptionID = subID
 	}
 
+	log.Infoln(fmt.Sprintf("AzureEnvironment: %s", authArgs.RawAzureEnvironment))
 	_, err := azure.EnvironmentFromName(authArgs.RawAzureEnvironment)
 	if err != nil {
 		return errors.New("failed to parse --azure-env as a valid target Azure cloud environment")
@@ -191,6 +197,13 @@ func getCloudSubFromAzConfig(cloud string, f *ini.File) (uuid.UUID, error) {
 }
 
 func (authArgs *authArgs) getClient() (armhelpers.ACSEngineClient, error) {
+	if isAzureStackCloud(authArgs.RawAzureEnvironment) {
+		return authArgs.getazsClient()
+	}
+	return authArgs.getazClient()
+}
+
+func (authArgs *authArgs) getazClient() (armhelpers.ACSEngineClient, error) {
 	var client *armhelpers.AzureClient
 	env, err := azure.EnvironmentFromName(authArgs.RawAzureEnvironment)
 	if err != nil {
@@ -203,6 +216,36 @@ func (authArgs *authArgs) getClient() (armhelpers.ACSEngineClient, error) {
 		client, err = armhelpers.NewAzureClientWithClientSecret(env, authArgs.SubscriptionID.String(), authArgs.ClientID.String(), authArgs.ClientSecret)
 	case "client_certificate":
 		client, err = armhelpers.NewAzureClientWithClientCertificateFile(env, authArgs.SubscriptionID.String(), authArgs.ClientID.String(), authArgs.CertificatePath, authArgs.PrivateKeyPath)
+	default:
+		return nil, errors.Errorf("--auth-method: ERROR: method unsupported. method=%q", authArgs.AuthMethod)
+	}
+	if err != nil {
+		return nil, err
+	}
+	err = client.EnsureProvidersRegistered(authArgs.SubscriptionID.String())
+	if err != nil {
+		return nil, err
+	}
+	client.AddAcceptLanguages([]string{authArgs.language})
+	return client, nil
+}
+
+func (authArgs *authArgs) getazsClient() (armhelpers.ACSEngineClient, error) {
+	var client *azurestack.AzureClient
+	env, err := azure.EnvironmentFromName(authArgs.RawAzureEnvironment)
+	if err != nil {
+		return nil, err
+	}
+	switch authArgs.AuthMethod {
+	case "device":
+		if isAzureStackCloud(authArgs.RawAzureEnvironment) {
+			log.Fatal("--auth-method is not a valid auth method for AzureStackCloud.")
+		}
+		client, err = azurestack.NewAzureClientWithDeviceAuth(env, authArgs.SubscriptionID.String())
+	case "client_secret":
+		client, err = azurestack.NewAzureClientWithClientSecret(env, authArgs.SubscriptionID.String(), authArgs.ClientID.String(), authArgs.ClientSecret)
+	case "client_certificate":
+		client, err = azurestack.NewAzureClientWithClientCertificateFile(env, authArgs.SubscriptionID.String(), authArgs.ClientID.String(), authArgs.CertificatePath, authArgs.PrivateKeyPath)
 	default:
 		return nil, errors.Errorf("--auth-method: ERROR: method unsupported. method=%q", authArgs.AuthMethod)
 	}
@@ -235,4 +278,47 @@ func getCompletionCmd(root *cobra.Command) *cobra.Command {
 		},
 	}
 	return completionCmd
+}
+
+func writeCloudProfile(cs *api.ContainerService) error {
+
+	file, err := ioutil.TempFile("", "azurestackcloud.json")
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Infoln(fmt.Sprintf("Writing cloud profile to: %s", file.Name()))
+
+	// Build content for the file
+	content := `{
+	"name": "` + cs.Properties.CloudProfile.Name + `",
+	"managementPortalURL": "` + cs.Properties.CloudProfile.ManagementPortalURL + `",
+	"publishSettingsURL": "` + cs.Properties.CloudProfile.PublishSettingsURL + `",
+	"serviceManagementEndpoint": "` + cs.Properties.CloudProfile.ServiceManagementEndpoint + `",
+	"resourceManagerEndpoint": "` + cs.Properties.CloudProfile.ResourceManagerEndpoint + `",
+	"activeDirectoryEndpoint": "` + cs.Properties.CloudProfile.ActiveDirectoryEndpoint + `",
+	"galleryEndpoint": "` + cs.Properties.CloudProfile.GalleryEndpoint + `",
+	"keyVaultEndpoint": "` + cs.Properties.CloudProfile.KeyVaultEndpoint + `",
+	"graphEndpoint": "` + cs.Properties.CloudProfile.GraphEndpoint + `",
+	"storageEndpointSuffix": "` + cs.Properties.CloudProfile.StorageEndpointSuffix + `",
+	"sQLDatabaseDNSSuffix": "` + cs.Properties.CloudProfile.SQLDatabaseDNSSuffix + `",
+	"trafficManagerDNSSuffix": "` + cs.Properties.CloudProfile.TrafficManagerDNSSuffix + `",
+	"keyVaultDNSSuffix": "` + cs.Properties.CloudProfile.KeyVaultDNSSuffix + `",
+	"serviceBusEndpointSuffix": "` + cs.Properties.CloudProfile.ServiceBusEndpointSuffix + `",
+	"serviceManagementVMDNSSuffix": "` + cs.Properties.CloudProfile.ServiceManagementVMDNSSuffix + `",
+	"resourceManagerVMDNSSuffix": "` + cs.Properties.CloudProfile.ResourceManagerVMDNSSuffix + `",
+	"containerRegistryDNSSuffix": "` + cs.Properties.CloudProfile.ContainerRegistryDNSSuffix + `"
+    }`
+
+	if _, err = file.Write([]byte(content)); err != nil {
+		fmt.Printf("Error [Write %s] : %v\n", file.Name(), err)
+	}
+
+	os.Setenv("AZURE_ENVIRONMENT_FILEPATH", file.Name())
+
+	return nil
+}
+
+func isAzureStackCloud(name string) bool {
+	return strings.EqualFold(name, azureStackEnvironmentName)
 }

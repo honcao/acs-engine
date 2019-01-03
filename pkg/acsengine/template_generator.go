@@ -202,6 +202,30 @@ func (t *TemplateGenerator) getMasterCustomData(cs *api.ContainerService, textFi
 // getTemplateFuncMap returns all functions used in template generation
 func (t *TemplateGenerator) getTemplateFuncMap(cs *api.ContainerService) template.FuncMap {
 	return template.FuncMap{
+		"IsAzureStackCloud": func() bool {
+			var cloudProfileName string
+			if cs.Properties.CloudProfile != nil {
+				cloudProfileName = cs.Properties.CloudProfile.Name
+			}
+			return strings.EqualFold(cloudProfileName, azureStackCloud)
+		},
+		"IsMultipleMasters": func() bool {
+			return cs.Properties.MasterProfile.Count > 1
+		},
+		"GetIdentitySystem": func() string {
+			if cs.Properties.CloudProfile != nil {
+				if strings.EqualFold(cs.Properties.CloudProfile.IdentitySystem, adfsIdentitySystem) {
+					return adfsIdentitySystem
+				}
+			}
+			return azureADIdentitySystem
+		},
+		"GetAuthMethod": func() string {
+			if cs.Properties.ServicePrincipalProfile.KeyvaultSecretRef != nil {
+				return authMethodClientCertificate
+			}
+			return authMethodClientSecret
+		},
 		"IsMasterVirtualMachineScaleSets": func() bool {
 			return cs.Properties.MasterProfile != nil && cs.Properties.MasterProfile.IsVirtualMachineScaleSets()
 		},
@@ -370,7 +394,7 @@ func (t *TemplateGenerator) getTemplateFuncMap(cs *api.ContainerService) templat
 			return ""
 		},
 		"UseAksExtension": func() bool {
-			cloudSpecConfig := getCloudSpecConfig(cs.Location)
+			cloudSpecConfig := getCloudSpecConfig(cs.Location, cs.Properties)
 			return cloudSpecConfig.CloudName == azurePublicCloud
 		},
 		"UseInstanceMetadata": func() bool {
@@ -763,35 +787,35 @@ func (t *TemplateGenerator) getTemplateFuncMap(cs *api.ContainerService) templat
 			return cs.Properties.LinuxProfile.ScriptRootURL
 		},
 		"GetMasterOSImageOffer": func() string {
-			cloudSpecConfig := getCloudSpecConfig(cs.Location)
+			cloudSpecConfig := getCloudSpecConfig(cs.Location, cs.Properties)
 			return fmt.Sprintf("\"%s\"", cloudSpecConfig.OSImageConfig[cs.Properties.MasterProfile.Distro].ImageOffer)
 		},
 		"GetMasterOSImagePublisher": func() string {
-			cloudSpecConfig := getCloudSpecConfig(cs.Location)
+			cloudSpecConfig := getCloudSpecConfig(cs.Location, cs.Properties)
 			return fmt.Sprintf("\"%s\"", cloudSpecConfig.OSImageConfig[cs.Properties.MasterProfile.Distro].ImagePublisher)
 		},
 		"GetMasterOSImageSKU": func() string {
-			cloudSpecConfig := getCloudSpecConfig(cs.Location)
+			cloudSpecConfig := getCloudSpecConfig(cs.Location, cs.Properties)
 			return fmt.Sprintf("\"%s\"", cloudSpecConfig.OSImageConfig[cs.Properties.MasterProfile.Distro].ImageSku)
 		},
 		"GetMasterOSImageVersion": func() string {
-			cloudSpecConfig := getCloudSpecConfig(cs.Location)
+			cloudSpecConfig := getCloudSpecConfig(cs.Location, cs.Properties)
 			return fmt.Sprintf("\"%s\"", cloudSpecConfig.OSImageConfig[cs.Properties.MasterProfile.Distro].ImageVersion)
 		},
 		"GetAgentOSImageOffer": func(profile *api.AgentPoolProfile) string {
-			cloudSpecConfig := getCloudSpecConfig(cs.Location)
+			cloudSpecConfig := getCloudSpecConfig(cs.Location, cs.Properties)
 			return fmt.Sprintf("\"%s\"", cloudSpecConfig.OSImageConfig[profile.Distro].ImageOffer)
 		},
 		"GetAgentOSImagePublisher": func(profile *api.AgentPoolProfile) string {
-			cloudSpecConfig := getCloudSpecConfig(cs.Location)
+			cloudSpecConfig := getCloudSpecConfig(cs.Location, cs.Properties)
 			return fmt.Sprintf("\"%s\"", cloudSpecConfig.OSImageConfig[profile.Distro].ImagePublisher)
 		},
 		"GetAgentOSImageSKU": func(profile *api.AgentPoolProfile) string {
-			cloudSpecConfig := getCloudSpecConfig(cs.Location)
+			cloudSpecConfig := getCloudSpecConfig(cs.Location, cs.Properties)
 			return fmt.Sprintf("\"%s\"", cloudSpecConfig.OSImageConfig[profile.Distro].ImageSku)
 		},
 		"GetAgentOSImageVersion": func(profile *api.AgentPoolProfile) string {
-			cloudSpecConfig := getCloudSpecConfig(cs.Location)
+			cloudSpecConfig := getCloudSpecConfig(cs.Location, cs.Properties)
 			return fmt.Sprintf("\"%s\"", cloudSpecConfig.OSImageConfig[profile.Distro].ImageVersion)
 		},
 		"UseAgentCustomImage": func(profile *api.AgentPoolProfile) bool {

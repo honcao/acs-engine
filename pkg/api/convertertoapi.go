@@ -352,6 +352,12 @@ func convertVLabsProperties(vlabs *vlabs.Properties, api *Properties, isUpdate b
 		api.OrchestratorProfile = &OrchestratorProfile{}
 		convertVLabsOrchestratorProfile(vlabs, api.OrchestratorProfile, isUpdate)
 	}
+
+	if vlabs.CloudProfile != nil {
+		api.CloudProfile = &CloudProfile{}
+		convertVLabsCloudProfile(vlabs.CloudProfile, api.CloudProfile)
+	}
+
 	if vlabs.MasterProfile != nil {
 		api.MasterProfile = &MasterProfile{}
 		convertVLabsMasterProfile(vlabs.MasterProfile, api.MasterProfile)
@@ -573,6 +579,45 @@ func convertV20170701OrchestratorProfile(v20170701cs *v20170701.OrchestratorProf
 	default:
 		break
 	}
+}
+
+func convertVLabsCloudProfile(vlabscs *vlabs.CloudProfile, api *CloudProfile) {
+	api.Name = vlabscs.Name
+	api.ManagementPortalURL = vlabscs.ManagementPortalURL
+	api.PublishSettingsURL = vlabscs.PublishSettingsURL
+	api.ServiceManagementEndpoint = vlabscs.ServiceManagementEndpoint
+	api.ResourceManagerEndpoint = vlabscs.ResourceManagerEndpoint
+	api.ActiveDirectoryEndpoint = vlabscs.ActiveDirectoryEndpoint
+	api.GalleryEndpoint = vlabscs.GalleryEndpoint
+	api.KeyVaultEndpoint = vlabscs.KeyVaultEndpoint
+	api.GraphEndpoint = vlabscs.GraphEndpoint
+	api.StorageEndpointSuffix = vlabscs.StorageEndpointSuffix
+	api.SQLDatabaseDNSSuffix = vlabscs.SQLDatabaseDNSSuffix
+	api.TrafficManagerDNSSuffix = vlabscs.TrafficManagerDNSSuffix
+	api.KeyVaultDNSSuffix = vlabscs.KeyVaultDNSSuffix
+	api.ServiceBusEndpointSuffix = vlabscs.ServiceBusEndpointSuffix
+	api.ServiceManagementVMDNSSuffix = vlabscs.ServiceManagementVMDNSSuffix
+	api.ResourceManagerVMDNSSuffix = vlabscs.ResourceManagerVMDNSSuffix
+	api.ContainerRegistryDNSSuffix = vlabscs.ContainerRegistryDNSSuffix
+	api.ResourceManagerRootCertificate = vlabscs.ResourceManagerRootCertificate
+	api.Location = vlabscs.Location
+	api.IdentitySystem = vlabscs.IdentitySystem
+	api.DockerEngineRepo = vlabscs.DockerEngineRepo
+	api.DockerComposeDownloadURL = vlabscs.DockerComposeDownloadURL
+	api.KubernetesDependencyImageBase = vlabscs.KubernetesDependencyImageBase
+	api.TillerImageBase = vlabscs.TillerImageBase
+	api.NVIDIAImageBase = vlabscs.NVIDIAImageBase
+	api.AzureCNIImageBase = vlabscs.AzureCNIImageBase
+	api.AzureCNIBinariesBase = vlabscs.AzureCNIBinariesBase
+	api.ACIConnectorImageBase = vlabscs.ACIConnectorImageBase
+	api.EtcdDownloadURLBase = vlabscs.EtcdDownloadURLBase
+	api.KubeBinariesSASURLBase = vlabscs.KubeBinariesSASURLBase
+	api.WindowsPackageSASURLBase = vlabscs.WindowsPackageSASURLBase
+	api.WindowsTelemetryGUID = vlabscs.WindowsTelemetryGUID
+	api.CNIPluginsDownloadURLBase = vlabscs.CNIPluginsDownloadURLBase
+	api.VnetCNILinuxPluginsDownloadURL = vlabscs.VnetCNILinuxPluginsDownloadURL
+	api.VnetCNIWindowsPluginsDownloadURL = vlabscs.VnetCNIWindowsPluginsDownloadURL
+	api.ContainerdDownloadURLBase = vlabscs.ContainerdDownloadURLBase
 }
 
 func convertVLabsOrchestratorProfile(vp *vlabs.Properties, api *OrchestratorProfile, isUpdate bool) {

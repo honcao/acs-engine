@@ -84,6 +84,9 @@ dist: build-cross
 	( \
 		cd _dist && \
 		$(DIST_DIRS) cp ../LICENSE {} \; && \
+		$(DIST_DIRS) cp ../examples/azurestack/azurestack-kubernetes1.9.json {} \; && \
+		$(DIST_DIRS) cp ../examples/azurestack/azurestack-kubernetes1.10.json {} \; && \
+		$(DIST_DIRS) cp ../examples/azurestack/azurestack-kubernetes1.11.json {} \; && \
 		$(DIST_DIRS) cp ../README.md {} \; && \
 		$(DIST_DIRS) tar -zcf {}.tar.gz {} \; && \
 		$(DIST_DIRS) zip -r {}.zip {} \; \

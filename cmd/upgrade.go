@@ -114,20 +114,8 @@ func (uc *upgradeCmd) validate(cmd *cobra.Command) error {
 func (uc *upgradeCmd) loadCluster(cmd *cobra.Command) error {
 	var err error
 
-	if err = uc.authArgs.validateAuthArgs(); err != nil {
-		return err
-	}
-
-	if uc.client, err = uc.authArgs.getClient(); err != nil {
-		return errors.Wrap(err, "Failed to get client")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), armhelpers.DefaultARMOperationTimeout)
 	defer cancel()
-	_, err = uc.client.EnsureResourceGroup(ctx, uc.resourceGroupName, uc.location, nil)
-	if err != nil {
-		return errors.Wrap(err, "Error ensuring resource group")
-	}
 
 	// load apimodel from the deployment directory
 	apiModelPath := path.Join(uc.deploymentDirectory, "apimodel.json")
@@ -146,6 +134,26 @@ func (uc *upgradeCmd) loadCluster(cmd *cobra.Command) error {
 	uc.containerService, uc.apiVersion, err = apiloader.LoadContainerServiceFromFile(apiModelPath, true, true, nil)
 	if err != nil {
 		return errors.Wrap(err, "Error parsing the api model")
+	}
+
+	// For Hybrid cloud we need to write the cloud profile locally.
+	if uc.containerService.Properties.CloudProfile != nil {
+		if isAzureStackCloud(uc.containerService.Properties.CloudProfile.Name) {
+			writeCloudProfile(uc.containerService)
+		}
+	}
+
+	if err = uc.authArgs.validateAuthArgs(); err != nil {
+		return err
+	}
+
+	if uc.client, err = uc.authArgs.getClient(); err != nil {
+		return errors.Wrap(err, "Failed to get client")
+	}
+
+	_, err = uc.client.EnsureResourceGroup(ctx, uc.resourceGroupName, uc.location, nil)
+	if err != nil {
+		return errors.Wrap(err, "Error ensuring resource group")
 	}
 
 	if uc.containerService.Location == "" {
